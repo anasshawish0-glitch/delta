@@ -1,11 +1,11 @@
 """Packs an STL into a Bambu Studio project (same name, .3mf) next to it.
 
-Usage: python3 make_3mf.py <part.stl> <template.3mf> [--on-side]
+Usage: python3 make_3mf.py <part.stl> <template.3mf> [--on-side | --flip]
 
 The template is any Bambu Studio project; its printer / filament / process
 settings are reused. The part is centered on the plate. With --on-side it is
 first rotated 90 deg about X (used for the L-bracket so the layers run around
-the bend).
+the bend). With --flip it is turned upside down (rotated 180 deg about X).
 """
 import io
 import json
@@ -20,6 +20,7 @@ import numpy as np
 
 stl_path, template = sys.argv[1], sys.argv[2]
 on_side = "--on-side" in sys.argv[3:]
+flip = "--flip" in sys.argv[3:]
 name = os.path.splitext(os.path.basename(stl_path))[0]
 out_path = os.path.splitext(stl_path)[0] + ".3mf"
 
@@ -35,6 +36,8 @@ verts = verts.astype(np.float64)
 
 if on_side:  # rotate +90 deg about X: (x, y, z) -> (x, -z, y)
     verts = np.c_[verts[:, 0], -verts[:, 2], verts[:, 1]]
+if flip:  # rotate 180 deg about X: (x, y, z) -> (x, -y, -z)
+    verts = np.c_[verts[:, 0], -verts[:, 1], -verts[:, 2]]
 # Center at origin; the build item transform places it on the plate.
 lo, hi = verts.min(0), verts.max(0)
 verts -= (lo + hi) / 2
