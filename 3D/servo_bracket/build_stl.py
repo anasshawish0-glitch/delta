@@ -24,8 +24,8 @@ ear_dx   = 49.5   # ear screw spacing along the servo
 ear_dy   = 10.0   # ear screw spacing across the servo
 ear_d    = 3.2    # ear screw hole diameter
 # Legs, measured from the top of the frame down to the tip
-leg_long  = 40.0  # leg with the rounded end and hole pattern
-leg_short = 40.0  # plain leg on the other side
+leg_long  = 64.5  # leg with the rounded end and hole pattern
+leg_short = 64.5  # plain leg on the other side
 # Hole pattern on the long leg
 center_d = 8.0    # center hole
 screw_d  = 3.0    # 4 screw holes
