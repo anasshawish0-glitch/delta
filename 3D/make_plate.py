@@ -19,10 +19,10 @@ template = sys.argv[1] if len(sys.argv) > 1 else "servo_bracket/Servo-U-Bracket.
 
 # (name, stl, orientation, plate x, plate y)
 PARTS = [
-    ("servo_bracket",   "servo_bracket/servo_bracket.stl",     "on-side", 105, 162),
-    ("flange_standoff", "flange_standoff/flange_standoff.stl", None,      160, 162),
-    ("motor_bracket",   "motor_bracket/motor_bracket.stl",     "on-side", 105, 100),
-    ("fit_test_coin",   "fit_test/fit_test_coin.stl",          None,      160, 100),
+    ("servo_bracket",   "servo_bracket/servo_bracket.stl",     "on-side",  95, 165),
+    ("u_bracket",       "u_bracket/u_bracket.stl",             "on-side", 160, 165),
+    ("flange_standoff", "flange_standoff/flange_standoff.stl", None,       95,  95),
+    ("motor_bracket",   "motor_bracket/motor_bracket.stl",     "on-side", 150,  95),
 ]
 
 
