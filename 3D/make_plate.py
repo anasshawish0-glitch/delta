@@ -19,10 +19,11 @@ template = sys.argv[1] if len(sys.argv) > 1 else "servo_bracket/Servo-U-Bracket.
 
 # (name, stl, orientation, plate x, plate y)
 PARTS = [
-    ("servo_bracket",   "servo_bracket/servo_bracket.stl",     "on-side",  95, 165),
-    ("u_bracket",       "u_bracket/u_bracket.stl",             "on-side", 160, 165),
-    ("flange_standoff", "flange_standoff/flange_standoff.stl", None,       95,  95),
-    ("motor_bracket",   "motor_bracket/motor_bracket.stl",     "on-side", 150,  95),
+    ("servo_bracket",      "servo_bracket/servo_bracket.stl",           "on-side",  95, 190),
+    ("u_bracket",          "u_bracket/u_bracket.stl",                   "on-side", 160, 190),
+    ("servo_base_bracket", "servo_base_bracket/servo_base_bracket.stl", "on-side",  95, 110),
+    ("motor_bracket",      "motor_bracket/motor_bracket.stl",           "on-side", 160, 115),
+    ("flange_standoff",    "flange_standoff/flange_standoff.stl",       None,      210, 115),
 ]
 
 
@@ -149,7 +150,7 @@ def thumb(px):
     fig = plt.figure(figsize=(px / 100, px / 100), dpi=100)
     ax = fig.add_axes([0, 0, 1, 1], projection="3d")
     ax.add_collection3d(Poly3DCollection(tri, facecolors=np.c_[s, s, s, np.ones_like(s)], edgecolor="none"))
-    ax.set_xlim(70, 190); ax.set_ylim(70, 190); ax.set_zlim(0, 120)
+    ax.set_xlim(50, 230); ax.set_ylim(50, 230); ax.set_zlim(0, 180)
     ax.set_box_aspect((1, 1, 1)); ax.view_init(40, -60); ax.axis("off")
     buf = io.BytesIO()
     fig.savefig(buf, format="png", transparent=True)
