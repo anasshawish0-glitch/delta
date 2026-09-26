@@ -21,3 +21,4 @@ Rebuild the 3MF with `python3 ../make_3mf.py servo_bracket.stl Servo-U-Bracket.3
 |-----------|-------|--------|
 | Servo window | 41 × 20.5 | servo body measured 40.43 × 20.02, plus clearance |
 | Ear screw holes | 4 × Ø3.2, 48 × 10 | MG996R ear holes (slotted, so a little play is fine) |
+| Leg center holes | Ø8.6, widened from Ø8 | an 8.25 mm bushing slides in |

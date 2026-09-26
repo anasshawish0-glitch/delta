@@ -19,6 +19,7 @@ win_w  = 20.5   # window width  (servo body measured 20.02)
 ear_dx = 48.0   # ear screw spacing along the servo
 ear_dy = 10.0   # ear screw spacing across the servo
 ear_d  = 3.2    # ear screw hole diameter
+bore_d = 8.6    # leg center holes, widened from 8 so an 8.25 mm bushing slides in
 
 src = zipfile.ZipFile("Servo-U-Bracket.3mf").read("3D/Objects/object_1.model").decode()
 num = r"([-\d.eE]+)"
@@ -33,6 +34,10 @@ for sx in (-1, 1):
     for sy in (-1, 1):
         cut += CrossSection.circle(ear_d / 2).translate((sx * ear_dx / 2, sy * ear_dy / 2))
 part = bracket - cut.extrude(5).translate((0, 0, hi - 3))
+
+# Widen the center hole in each leg (legs at x = +-26.5..28, hole at y = 0, z = -19.75).
+bore = Manifold.cylinder(70, bore_d / 2, center=True).rotate((0, 90, 0)).translate((0, 0, -19.75))
+part = part - bore
 
 m = part.to_mesh()
 v = np.array(m.vert_properties)[:, :3]
