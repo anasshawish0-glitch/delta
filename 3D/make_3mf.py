@@ -1,10 +1,11 @@
-"""Packs motor_bracket.stl into a Bambu Studio project (motor_bracket.3mf).
+"""Packs an STL into a Bambu Studio project (same name, .3mf) next to it.
 
-Usage: python3 make_3mf.py <template.3mf>
+Usage: python3 make_3mf.py <part.stl> <template.3mf> [--on-side]
 
 The template is any Bambu Studio project; its printer / filament / process
-settings are reused. The bracket is laid on its side (the 25 mm width is the
-print height) so the layers run around the bend, and centered on the plate.
+settings are reused. The part is centered on the plate. With --on-side it is
+first rotated 90 deg about X (used for the L-bracket so the layers run around
+the bend).
 """
 import io
 import json
@@ -13,13 +14,17 @@ import struct
 import sys
 import zipfile
 
+import os
+
 import numpy as np
 
-template = sys.argv[1]
-name = "motor_bracket"
+stl_path, template = sys.argv[1], sys.argv[2]
+on_side = "--on-side" in sys.argv[3:]
+name = os.path.splitext(os.path.basename(stl_path))[0]
+out_path = os.path.splitext(stl_path)[0] + ".3mf"
 
 # Read binary STL and rebuild the indexed mesh (vertices are exact duplicates).
-data = open(f"{name}.stl", "rb").read()
+data = open(stl_path, "rb").read()
 count = struct.unpack_from("<I", data, 80)[0]
 rec = np.frombuffer(data, dtype=np.dtype([("n", "<3f4"), ("v", "<9f4"), ("a", "<u2")]),
                     count=count, offset=84)
@@ -28,8 +33,9 @@ verts, faces = np.unique(tri, axis=0, return_inverse=True)
 faces = faces.reshape(-1, 3)
 verts = verts.astype(np.float64)
 
-# Lay on its side: rotate +90 deg about X, (x, y, z) -> (x, -z, y), then center at origin.
-verts = np.c_[verts[:, 0], -verts[:, 2], verts[:, 1]]
+if on_side:  # rotate +90 deg about X: (x, y, z) -> (x, -z, y)
+    verts = np.c_[verts[:, 0], -verts[:, 2], verts[:, 1]]
+# Center at origin; the build item transform places it on the plate.
 lo, hi = verts.min(0), verts.max(0)
 verts -= (lo + hi) / 2
 size = hi - lo
@@ -112,9 +118,9 @@ replace = {
     "Metadata/pick_1.png": big,
     "Metadata/plate_1_small.png": small,
 }
-with zipfile.ZipFile(f"{name}.3mf", "w", zipfile.ZIP_DEFLATED) as zout:
+with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as zout:
     for item in zin.infolist():
         zout.writestr(item.filename, replace.get(item.filename, zin.read(item.filename)))
 
-print(f"{name}.3mf: {len(verts)} verts, {len(faces)} faces, size {np.round(size, 2).tolist()} mm, "
+print(f"{out_path}: {len(verts)} verts, {len(faces)} faces, size {np.round(size, 2).tolist()} mm, "
       f"at ({cx:g}, {cy:g}) on {settings['printer_model']}")
