@@ -16,7 +16,7 @@
 | Thickness | 2.60 |
 | Width | 25 |
 | Long leg (from outer corner) | 40 |
-| Short leg (from outer corner) | 32 |
+| Short leg (from outer corner) | 30 |
 | Inner bend radius | 2 |
 | Center hole | Ø8 |
 | Screw holes | 4 × Ø3, 7 mm from center (14 mm between opposite holes), "+" pattern on the leg axes |
