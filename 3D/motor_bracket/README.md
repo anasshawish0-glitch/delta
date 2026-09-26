@@ -4,9 +4,11 @@
 
 | File | Purpose |
 |------|---------|
+| `motor_bracket.3mf` | Bambu Studio project (Bambu Lab A1, part laid on its side, centered on the plate) |
 | `motor_bracket.stl` | Ready to print / import (units: mm) |
 | `motor_bracket.scad` | Parametric OpenSCAD source – change dimensions and re-export |
 | `build_stl.py` | Python script that generates the STL (`pip install manifold3d numpy`) |
+| `make_3mf.py` | Packs the STL into a Bambu Studio project: `python3 make_3mf.py <template.3mf>` |
 | `preview.png` | Render preview |
 
 ## Dimensions (mm)
