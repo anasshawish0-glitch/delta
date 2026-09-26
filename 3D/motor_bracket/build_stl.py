@@ -13,10 +13,10 @@ t        = 2.60   # sheet thickness
 W        = 26.0   # bracket width
 L        = 32.0   # leg length measured from the outer corner
 ri       = 2.0    # inner bend radius
-center_d = 7.5    # center (shaft) hole diameter
-screw_d  = 3.2    # M3 clearance holes
-pat_a    = 16.0   # motor hole spacing A
-pat_b    = 19.0   # motor hole spacing B
+center_d = 8.0    # center (shaft) hole diameter
+screw_d  = 3.0    # screw holes
+pat_a    = 14.0   # motor hole spacing A
+pat_b    = 14.0   # motor hole spacing B
 
 R  = ri + t       # outer bend radius
 hc = L - W / 2    # hole center distance from outer corner

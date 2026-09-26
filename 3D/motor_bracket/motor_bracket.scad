@@ -5,10 +5,10 @@ t        = 2.60;   // sheet thickness (السمك)
 W        = 26;     // bracket width
 L        = 32;     // leg length measured from the outer corner
 ri       = 2;      // inner bend radius
-center_d = 7.5;    // center (shaft) hole diameter
-screw_d  = 3.2;    // M3 clearance holes
-pat_a    = 16;     // motor hole spacing A
-pat_b    = 19;     // motor hole spacing B
+center_d = 8.0;    // center (shaft) hole diameter
+screw_d  = 3.0;    // screw holes
+pat_a    = 14;     // motor hole spacing A
+pat_b    = 14;     // motor hole spacing B
 $fn      = 96;
 
 R  = ri + t;       // outer bend radius
