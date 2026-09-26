@@ -18,7 +18,7 @@ Rebuild the 3MF with `python3 ../make_3mf.py flange_standoff.stl <template.3mf>`
 |-----------|-------|--------|
 | Total length | 55.40 | caliper |
 | Column diameter | 12.44 | caliper |
-| Flange diameter | 18 | estimated from photo |
+| Flange diameter | 20.03 | caliper |
 | Flange thickness | 2.86 | caliper |
 | Screw holes | 4 per flange, "+" pattern, 14 between opposite holes | same as the motor bracket |
 | Screw hole diameter | 2.6 | M3 screws tap their own thread in the plastic |
