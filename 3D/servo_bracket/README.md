@@ -23,4 +23,4 @@ Rebuild the 3MF with `python3 ../make_3mf.py servo_bracket.stl <template.3mf> --
 | Width | 25 | estimated |
 | Frame outer length | 64 | estimated |
 | Legs (from top of frame) | 64.5 / 64.5 | same height as `Servo-U-Bracket.3mf` |
-| Long-leg holes | Ø8 center + 4 × Ø3, 14 apart, "x" pattern | estimated from photo |
+| Long-leg holes | Ø8 center + 4 × Ø3, 14 apart, "+" pattern | estimated from photo |

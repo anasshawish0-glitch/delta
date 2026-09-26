@@ -30,7 +30,7 @@ leg_short = 64.5  # plain leg on the other side
 center_d = 8.0    # center hole
 screw_d  = 3.0    # 4 screw holes
 pat      = 14.0   # distance between opposite screw holes
-pat_rot  = 45.0   # pattern rotation (45 = "x", 0 = "+")
+pat_rot  = 0.0    # pattern rotation (0 = "+", 45 = "x")
 
 R = ri + t
 X = Lo / 2
