@@ -14,6 +14,7 @@ flange_d = 20.03  # flange diameter
 flange_t = 2.86   # flange thickness
 screw_d  = 2.6    # 4 screw holes per flange; 2.6 lets an M3 screw tap its own thread (use 3.2 for a clearance hole)
 pat      = 14.0   # distance between opposite screw holes
+hole_d   = 8.0    # screw hole depth from each end (runs past the flange into the column)
 
 tube = Manifold.cylinder(L, tube_d / 2)
 flange = Manifold.cylinder(flange_t, flange_d / 2)
@@ -22,8 +23,8 @@ part = tube + flange + flange.translate((0, 0, L - flange_t))
 holes = CrossSection()
 for (x, y) in [(pat / 2, 0), (-pat / 2, 0), (0, pat / 2), (0, -pat / 2)]:
     holes += CrossSection.circle(screw_d / 2).translate((x, y))
-hole_cyl = holes.extrude(flange_t + 2).translate((0, 0, -1))
-part = part - hole_cyl - hole_cyl.translate((0, 0, L - flange_t))
+hole_cyl = holes.extrude(hole_d + 1).translate((0, 0, -1))
+part = part - hole_cyl - hole_cyl.translate((0, 0, L - hole_d))
 
 m = part.to_mesh()
 v = np.array(m.vert_properties)[:, :3]

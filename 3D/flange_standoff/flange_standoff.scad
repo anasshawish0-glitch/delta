@@ -7,11 +7,12 @@ flange_d = 20.03;  // flange diameter
 flange_t = 2.86;   // flange thickness
 screw_d  = 2.6;    // 4 screw holes per flange; 2.6 lets an M3 screw tap its own thread (use 3.2 for a clearance hole)
 pat      = 14.0;   // distance between opposite screw holes
+hole_d   = 8.0;    // screw hole depth from each end (runs past the flange into the column)
 $fn      = 128;
 
 module holes() {
     for (a = [0, 90, 180, 270]) rotate(a) translate([pat/2, 0, -1])
-        cylinder(d = screw_d, h = flange_t + 2);
+        cylinder(d = screw_d, h = hole_d + 1);
 }
 
 difference() {
@@ -21,5 +22,5 @@ difference() {
         translate([0, 0, L - flange_t]) cylinder(d = flange_d, h = flange_t);
     }
     holes();
-    translate([0, 0, L - flange_t]) holes();
+    translate([0, 0, L]) mirror([0, 0, 1]) holes();
 }

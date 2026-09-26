@@ -22,3 +22,4 @@ Rebuild the 3MF with `python3 ../make_3mf.py flange_standoff.stl <template.3mf>`
 | Flange thickness | 2.86 | caliper |
 | Screw holes | 4 per flange, "+" pattern, 14 between opposite holes | same as the motor bracket |
 | Screw hole diameter | 2.6 | M3 screws tap their own thread in the plastic |
+| Screw hole depth | 8 from each end | deeper than the flange so the screw has more plastic to grip |
