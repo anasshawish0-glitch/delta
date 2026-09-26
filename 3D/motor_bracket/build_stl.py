@@ -10,7 +10,7 @@ from manifold3d import CrossSection, Manifold, set_circular_segments
 set_circular_segments(96)
 
 t        = 2.60   # sheet thickness
-W        = 26.0   # bracket width
+W        = 25.0   # bracket width
 L        = 32.0   # leg length measured from the outer corner
 ri       = 2.0    # inner bend radius
 center_d = 8.0    # center (shaft) hole diameter
@@ -37,7 +37,7 @@ body = side.extrude(W).rotate((90, 0, 0)).translate((0, W / 2, 0))
 # 2) Leg outline (rounded end) + holes, in leg coordinates (u along leg, v across).
 outline = CrossSection.square((hc + 1, W)).translate((-1, -W / 2)) + circ(W, hc)
 holes = circ(center_d, hc)
-c = s = math.sqrt(0.5)  # hole pattern rotated 45 deg
+c, s = 1.0, 0.0  # holes on the leg axes (+ pattern)
 for (x, y) in [(pat_a / 2, 0), (-pat_a / 2, 0), (0, pat_b / 2), (0, -pat_b / 2)]:
     holes += circ(screw_d, hc + x * c - y * s, x * s + y * c)
 profile = outline - holes

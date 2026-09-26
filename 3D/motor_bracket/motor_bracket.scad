@@ -2,7 +2,7 @@
 // All dimensions in mm. Edit the parameters below then export STL from OpenSCAD.
 
 t        = 2.60;   // sheet thickness (السمك)
-W        = 26;     // bracket width
+W        = 25;     // bracket width
 L        = 32;     // leg length measured from the outer corner
 ri       = 2;      // inner bend radius
 center_d = 8.0;    // center (shaft) hole diameter
@@ -22,7 +22,7 @@ module leg_profile() {
         }
         translate([hc, 0]) {
             circle(d = center_d);
-            rotate(45) {
+            {
                 for (s = [-1, 1]) translate([s * pat_a/2, 0]) circle(d = screw_d);
                 for (s = [-1, 1]) translate([0, s * pat_b/2]) circle(d = screw_d);
             }
