@@ -14,7 +14,7 @@ from manifold3d import CrossSection, Manifold, set_circular_segments
 set_circular_segments(96)
 
 t        = 2.60   # sheet thickness
-W        = 25.0   # bracket width
+W        = 26.65  # bracket width
 Lo       = 64.0   # frame outer length (outside of one leg to outside of the other)
 ri       = 2.0    # inner bend radius
 # Servo window + ear screws (MG996R body measured 40.43 x 20.02)
