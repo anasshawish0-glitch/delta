@@ -7,13 +7,13 @@ the base.
 
 | File | Purpose |
 |------|---------|
-| `servo_bracket.3mf` | Bambu Studio project (Bambu Lab A1), base flat on the plate, legs up |
+| `servo_bracket.3mf` | Bambu Studio project (Bambu Lab A1), laid on its side so the layers run around the bends |
 | `servo_bracket.stl` | Ready to print / import (units: mm) |
 | `Servo-U-Bracket.3mf` | Source U-bracket (also used as the Bambu settings template) |
 | `build_stl.py` | Generates the STL (`pip install manifold3d numpy`) |
 | `preview.png` | Render preview |
 
-Rebuild the 3MF with `python3 ../make_3mf.py servo_bracket.stl Servo-U-Bracket.3mf --flip`.
+Rebuild the 3MF with `python3 ../make_3mf.py servo_bracket.stl Servo-U-Bracket.3mf --on-side`.
 
 ## Changes to the U-bracket base (mm)
 
