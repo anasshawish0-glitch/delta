@@ -11,7 +11,7 @@ set_circular_segments(96)
 
 t        = 2.60   # sheet thickness
 W        = 25.0   # bracket width
-L_long   = 40.0   # long leg, measured from the outer corner
+L_long   = 41.5   # long leg, measured from the outer corner
 L_short  = 30.0   # short leg (has the countersunk hole), measured from the outer corner
 ri       = 2.0    # inner bend radius
 center_d = 8.0    # center (shaft) hole diameter
