@@ -11,7 +11,8 @@ set_circular_segments(96)
 
 t        = 2.60   # sheet thickness
 W        = 25.0   # bracket width
-L        = 32.0   # leg length measured from the outer corner
+L_long   = 40.0   # long leg (lies flat), measured from the outer corner
+L_short  = 32.0   # short leg (stands up), measured from the outer corner
 ri       = 2.0    # inner bend radius
 center_d = 8.0    # center (shaft) hole diameter
 screw_d  = 3.0    # screw holes
@@ -19,7 +20,6 @@ pat_a    = 14.0   # motor hole spacing A
 pat_b    = 14.0   # motor hole spacing B
 
 R  = ri + t       # outer bend radius
-hc = L - W / 2    # hole center distance from outer corner
 
 
 def circ(d, x=0.0, y=0.0):
@@ -30,21 +30,23 @@ def circ(d, x=0.0, y=0.0):
 bend = (CrossSection.circle(R) - CrossSection.circle(ri)) ^ \
     CrossSection.square((R, R)).translate((-R, -R))
 side = bend.translate((R, R)) \
-    + CrossSection.square((L - R, t)).translate((R, 0)) \
-    + CrossSection.square((t, L - R)).translate((0, R))
+    + CrossSection.square((L_long - R, t)).translate((R, 0)) \
+    + CrossSection.square((t, L_short - R)).translate((0, R))
 body = side.extrude(W).rotate((90, 0, 0)).translate((0, W / 2, 0))
 
 # 2) Leg outline (rounded end) + holes, in leg coordinates (u along leg, v across).
-outline = CrossSection.square((hc + 1, W)).translate((-1, -W / 2)) + circ(W, hc)
-holes = circ(center_d, hc)
-c, s = 1.0, 0.0  # holes on the leg axes (+ pattern)
-for (x, y) in [(pat_a / 2, 0), (-pat_a / 2, 0), (0, pat_b / 2), (0, -pat_b / 2)]:
-    holes += circ(screw_d, hc + x * c - y * s, x * s + y * c)
-profile = outline - holes
+def leg_profile(L):
+    hc = L - W / 2  # hole center distance from outer corner
+    outline = CrossSection.square((hc + 1, W)).translate((-1, -W / 2)) + circ(W, hc)
+    holes = circ(center_d, hc)
+    for (x, y) in [(pat_a / 2, 0), (-pat_a / 2, 0), (0, pat_b / 2), (0, -pat_b / 2)]:
+        holes += circ(screw_d, hc + x, y)  # "+" pattern on the leg axes
+    return outline - holes
 
-big = L + 2
-horiz_cut = profile.extrude(R + 1).translate((0, 0, -1))              # z in [-1, R]
-vert_cut = profile.extrude(big).rotate((0, -90, 0)).translate((big - 1, 0, 0))
+
+big = max(L_long, L_short) + 2
+horiz_cut = leg_profile(L_long).extrude(R + 1).translate((0, 0, -1))  # z in [-1, R]
+vert_cut = leg_profile(L_short).extrude(big).rotate((0, -90, 0)).translate((big - 1, 0, 0))
 vert_cut = vert_cut ^ Manifold.cube((big + 2, W + 2, big)).translate((-1, -W / 2 - 1, R))
 
 part = body ^ (horiz_cut + vert_cut)

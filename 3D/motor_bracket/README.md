@@ -15,12 +15,13 @@
 |-----------|-------|
 | Thickness | 2.60 |
 | Width | 25 |
-| Leg length (from outer corner) | 32 |
+| Long leg (from outer corner) | 40 |
+| Short leg (from outer corner) | 32 |
 | Inner bend radius | 2 |
 | Center hole | Ø8 |
 | Screw holes | 4 × Ø3, 7 mm from center (14 mm between opposite holes), "+" pattern on the leg axes |
 
 Thickness, width and hole sizes are exact (width and holes taken from `Servo-U-Bracket.3mf`);
-leg length was estimated from a photo. Measure your part
+leg lengths were estimated from photos (long leg against a ruler). Measure your part
 with calipers and update the values at the top of `motor_bracket.scad` or
 `build_stl.py`.
