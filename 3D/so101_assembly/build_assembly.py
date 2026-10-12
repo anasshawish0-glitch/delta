@@ -5,6 +5,7 @@ Reads the official URDF and meshes from github.com/TheRobotStudio/SO-ARM100
 back of the upper arm to a printed outrigger behind the base, then writes:
   so101_assembly.stl  everything in one file
   so101_assembly.glb  coloured, for quick viewing
+  so101_arm_only.stl  / .glb  the same arm without the muscles and outrigger
 
 Run: python3 build_assembly.py <path to SO-ARM100/Simulation/SO101>
 """
@@ -109,6 +110,7 @@ for k, sgn in enumerate([-1, 1]):
     m.apply_translation((upper + lower) / 2 + off)
     extra.append((f"mckibben_muscle_{k + 1}", m, "muscle"))
     extra.append((f"outrigger_beam_{k + 1}", beam(front + off * 0.8, lower + off * 0.8, 0.01), "mast"))
+arm_only = list(meshes)
 for n, m, c in extra:
     m.visual.face_colors = COLOURS[c]
     meshes.append((n, m))
@@ -116,10 +118,11 @@ lever = np.linalg.norm(np.cross(upper - axis_pt, (lower - upper) / np.linalg.nor
 print(f"muscle length {np.linalg.norm(upper - lower) * 1000:.0f} mm, lever about the shoulder {lever * 1000:.0f} mm")
 
 out = os.path.dirname(os.path.abspath(__file__))
-scene = trimesh.Scene()
-for n, m in meshes:
-    mm = m.copy(); mm.apply_scale(1000)
-    scene.add_geometry(mm, node_name=n)
-trimesh.util.concatenate([m for _, m in scene.geometry.items()]).export(os.path.join(out, "so101_assembly.stl"))
-scene.export(os.path.join(out, "so101_assembly.glb"))
-print(len(meshes), "parts; bounds (mm):", scene.bounds.round(1).tolist())
+for name, parts in [("so101_assembly", meshes), ("so101_arm_only", arm_only)]:
+    scene = trimesh.Scene()
+    for n, m in parts:
+        mm = m.copy(); mm.apply_scale(1000)
+        scene.add_geometry(mm, node_name=n)
+    trimesh.util.concatenate([m for _, m in scene.geometry.items()]).export(os.path.join(out, name + ".stl"))
+    scene.export(os.path.join(out, name + ".glb"))
+    print(name, len(parts), "parts; bounds (mm):", scene.bounds.round(1).tolist())

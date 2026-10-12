@@ -5,6 +5,7 @@ Whole follower arm in place (not for printing), to see what the finished arm loo
 - `so101_assembly.stl` — one file, in mm. Import into Onshape: Part Studio → Import → pick the file (units: millimeter).
 - `so101_assembly.glb` — coloured version (red = muscles, blue = printed crossbars and outrigger, black = STS3215 motors).
 - `preview.png` — side and 3/4 view.
+- `so101_arm_only.stl` / `.glb` / `preview_arm_only.png` — the same arm and pose without the muscles and outrigger.
 
 The arm parts and motors come from TheRobotStudio/SO-ARM100 (Simulation/SO101, Apache-2.0, see LICENSE).
 Muscle layout (placeholders, 18 mm muscles): two McKibben muscles, one each side of the upper arm,
