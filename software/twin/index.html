@@ -1,96 +1,137 @@
-<title>SO-101 Twin</title>
+<title>SO-101 Kitty Twin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Nunito:wght@400;600;700&display=swap">
 <style>
-/* Layout: a dark CAD-style workspace. The 3D viewport fills the page, a control rail sits on the left. */
+/* Layout: a black-and-pink robot studio. The 3D viewport fills the page; a kitty-patterned control rail sits on the left. */
 :root {
-  --bg: #0d1114;
-  --panel: #151a1f;
-  --ink: #e6ebef;
-  --muted: #93a0aa;
-  --line: #283039;
-  --accent: #4f9dff;
-  --ok: #3cc985;
-  --warn: #ff6a4d;
-  --viewport: #10151a;
-  --table: #1c2329;
-  --grid: #2b343c;
-  --obj1: #ef6b66;
-  --obj2: #f0b43a;
-  --obj3: #5b9cf0;
-  --smile: #f5c542;
-  --body: "IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
+  --bg: #0b0709;
+  --panel: #150b11;
+  --ink: #fde8f1;
+  --muted: #c99ab0;
+  --line: #3b1d2c;
+  --pink: #ff5fa2;
+  --pink-soft: #ffb3d1;
+  --bow-red: #ff3b5c;
+  --ok: #7be3b5;
+  --warn: #ff8a45;
+  --viewport: #0e080b;
+  --table: #1a0f15;
+  --grid: #3f1f30;
+  --paper: #f7e1ec;
+  --kitty-line: #1a0c12;
+  --head: "Baloo 2", "Nunito", system-ui, sans-serif;
+  --body: "Nunito", system-ui, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   color-scheme: dark;
 }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; }
 .app { height: 100%; display: flex; flex-direction: row; }
-.view { position: relative; flex: 1; min-width: 0; background: var(--viewport); }
+.view { position: relative; flex: 1; min-width: 0; background: var(--viewport); overflow: hidden; }
 #scene { display: block; width: 100%; height: 100%; touch-action: none; }
-.rail { width: 330px; flex: none; background: var(--panel); border-inline-end: 1px solid var(--line); overflow-y: auto; padding-inline: 16px; padding-block: 16px 24px; display: grid; gap: 18px; align-content: start; }
-.rail h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
-.rail h2 { font-size: .72rem; margin: 0; font-weight: 600; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
-.status { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--muted); }
-.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--obj2); display: inline-block; }
-section { display: grid; gap: 10px; }
+.rail { width: 330px; flex: none; background-color: var(--panel); border-inline-end: 1px solid var(--line); overflow-y: auto; padding-inline: 16px; padding-block: 14px 24px; display: grid; gap: 18px; align-content: start; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 52px; height: 44px; flex: none; }
+.brand h1 { font-family: var(--head); font-size: 1.6rem; line-height: 1; margin: 0; font-weight: 800; color: var(--pink); }
+.brand p { margin: 2px 0 0; font-size: .78rem; color: var(--muted); }
+.rail h2 { font-family: var(--head); font-size: .95rem; margin: 0; font-weight: 600; color: var(--pink-soft); }
+section { display: grid; gap: 10px; background: color-mix(in srgb, var(--panel) 88%, transparent); border-radius: 14px; }
 .xyz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .xyz label { display: grid; gap: 4px; font-size: .75rem; color: var(--muted); }
-.xyz input { width: 100%; box-sizing: border-box; font-family: var(--mono); font-size: .9rem; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); text-align: center; }
-.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; background: transparent; color: var(--ink); padding: 7px; font: inherit; cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--accent); color: #06111f; font-weight: 600; }
-.reach { font-size: .8rem; font-weight: 600; }
+.xyz input { width: 100%; box-sizing: border-box; font-family: var(--mono); font-size: .9rem; padding: 7px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--ink); text-align: center; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--ink); padding: 7px; font: inherit; font-weight: 600; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--pink); color: #1a0710; }
+.reach { font-size: .82rem; font-weight: 700; }
 .reach.ok { color: var(--ok); } .reach.no { color: var(--warn); }
-.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.btn { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 9px 10px; font: inherit; font-weight: 600; cursor: pointer; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #06111f; grid-column: 1 / -1; }
-.btn.stop { border-color: var(--warn); color: var(--warn); }
-.btn:disabled { opacity: .45; cursor: default; }
-.btn:focus-visible, .seg button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.run-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+.heart { position: relative; width: 112px; height: 100px; border: 0; padding: 0; background: none; cursor: pointer; justify-self: center; }
+.heart svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--pink) 45%, transparent)); transition: transform .15s ease; }
+.heart span { position: absolute; inset: 0; display: grid; place-items: center; padding-bottom: 14px; font-family: var(--head); font-weight: 800; font-size: 1.25rem; color: #1a0710; }
+.heart:hover:not(:disabled) svg { transform: scale(1.06); }
+.heart:not(:disabled) svg { animation: beat 2.4s ease-in-out infinite; }
+.heart:disabled { opacity: .45; cursor: default; }
+.heart:focus-visible { outline: none; }
+.heart:focus-visible svg { filter: drop-shadow(0 0 0 var(--ink)) drop-shadow(0 0 6px var(--pink-soft)); }
+@keyframes beat { 0%, 70%, 100% { transform: scale(1); } 78% { transform: scale(1.07); } 86% { transform: scale(1); } 92% { transform: scale(1.04); } }
+.pill { border: 1px solid var(--pink); background: transparent; color: var(--pink-soft); border-radius: 999px; padding: 8px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+.pill.stop { border-color: var(--warn); color: var(--warn); }
+.pill:disabled { opacity: .45; cursor: default; }
+.pill:focus-visible, .seg button:focus-visible, input:focus-visible { outline: 2px solid var(--pink-soft); outline-offset: 2px; }
 .joint { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
-.joint span { font-size: .82rem; }
+.joint span { font-size: .84rem; }
 .joint output { font-family: var(--mono); font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.joint input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.joint input { grid-column: 1 / -1; width: 100%; accent-color: var(--pink); }
 .objs { display: grid; gap: 6px; }
-.obj { display: flex; align-items: center; gap: 8px; justify-content: space-between; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
-.obj b { font-weight: 600; font-size: .85rem; display: inline-flex; align-items: center; gap: 6px; }
-.obj b i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.obj .btn { padding: 4px 10px; font-size: .78rem; }
+.obj { display: flex; align-items: center; gap: 8px; justify-content: space-between; border: 1px solid var(--line); border-radius: 14px; padding: 6px 8px; background: var(--bg); }
+.obj b { font-weight: 700; font-size: .86rem; display: inline-flex; align-items: center; gap: 6px; }
+.obj b svg { width: 30px; height: 25px; }
+.obj .pill { padding: 4px 10px; font-size: .78rem; }
 .note { font-size: .78rem; color: var(--muted); line-height: 1.55; margin: 0; }
 .insets { position: absolute; right: 12px; top: 12px; display: flex; gap: 8px; pointer-events: none; }
-.inset { width: 176px; height: 132px; border: 1px solid var(--line); border-radius: 8px; position: relative; }
-.inset span { position: absolute; bottom: 4px; left: 6px; font-size: .7rem; color: var(--ink); background: var(--panel); padding: 0 6px; border-radius: 4px; opacity: .9; }
-.hint { position: absolute; bottom: 12px; left: 12px; font-size: .75rem; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; max-width: calc(100% - 88px); }
-.smile { position: absolute; right: 12px; bottom: 12px; width: 34px; height: 34px; }
-.smile .mouth-sad { display: none; }
-.smile.sad .mouth-happy { display: none; }
-.smile.sad .mouth-sad { display: inline; }
-.smile .eye { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
-.smile.busy .eye { animation-duration: 1.2s; }
-@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
-@media (prefers-reduced-motion: reduce) { .smile .eye { animation: none; } }
-.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+.inset { width: 176px; height: 132px; border: 1px solid var(--pink); border-radius: 14px; position: relative; }
+.inset span { position: absolute; bottom: 5px; left: 6px; font-size: .7rem; font-weight: 700; color: #1a0710; background: var(--pink-soft); padding: 0 8px; border-radius: 999px; }
+.hint { position: absolute; bottom: 12px; left: 12px; font-size: .78rem; color: var(--ink); background: var(--panel); border: 1px solid var(--pink); border-radius: 999px; padding: 6px 14px; box-sizing: border-box; max-width: calc(100% - 110px); }
+.deco { position: absolute; pointer-events: none; }
+.deco.peek { left: -20px; top: -16px; width: 120px; transform: rotate(-14deg); }
+.deco.k2 { left: 22px; bottom: 58px; width: 46px; opacity: .55; transform: rotate(10deg); }
+.deco.k3 { left: 44%; top: 10px; width: 40px; opacity: .45; transform: rotate(-8deg); }
+.deco.k4 { right: 14px; top: 46%; width: 42px; opacity: .5; transform: rotate(12deg); }
+.deco.h1 { left: 34%; bottom: 70px; width: 16px; opacity: .6; }
+.deco.h2 { right: 200px; top: 160px; width: 12px; opacity: .5; }
+.status-kitty { position: absolute; right: 12px; bottom: 10px; width: 74px; height: 62px; }
+.status-kitty .tear { display: none; }
+.status-kitty.sad { --bow: #8d7280; }
+.status-kitty.sad .tear { display: inline; }
+.status-kitty.busy .bow-wrap { animation: wiggle .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes wiggle { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+@media (prefers-reduced-motion: reduce) { .heart:not(:disabled) svg, .status-kitty.busy .bow-wrap { animation: none; } }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--head); font-size: 1.1rem; }
 .loading[hidden] { display: none; }
 @media (max-width: 860px) {
   .app { flex-direction: column-reverse; height: auto; }
   .view { height: 58vh; min-height: 340px; flex: none; }
   .rail { width: auto; border-inline-end: 0; border-top: 1px solid var(--line); }
   .inset { width: 120px; height: 90px; }
+  .deco.k3, .deco.h2 { display: none; }
 }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="kitty" viewBox="0 0 120 100">
+      <g stroke="var(--kitty-line)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M18 46Q12 12 22 8Q31 6 48 26Z" fill="#fffafc"/>
+        <path d="M102 46Q108 12 98 8Q89 6 72 26Z" fill="#fffafc"/>
+        <ellipse cx="60" cy="58" rx="50" ry="36" fill="#fffafc"/>
+        <path d="M2 55L24 60M0 66L23 67M3 78L24 73M118 55L96 60M120 66L97 67M117 78L96 73" fill="none" stroke-width="3"/>
+        <ellipse cx="40" cy="60" rx="4.5" ry="6.5" fill="var(--kitty-line)" stroke="none"/>
+        <ellipse cx="80" cy="60" rx="4.5" ry="6.5" fill="var(--kitty-line)" stroke="none"/>
+        <ellipse cx="60" cy="69" rx="5.5" ry="4" fill="#f5c542" stroke-width="2"/>
+        <g class="bow-wrap">
+          <ellipse cx="77" cy="18" rx="12" ry="9" transform="rotate(-25 77 18)" fill="var(--bow, #ff5fa2)"/>
+          <ellipse cx="101" cy="22" rx="12" ry="9" transform="rotate(25 101 22)" fill="var(--bow, #ff5fa2)"/>
+          <circle cx="89" cy="20" r="6" fill="var(--bow, #ff5fa2)"/>
+        </g>
+      </g>
+    </symbol>
+    <symbol id="heart" viewBox="0 0 100 90">
+      <path d="M50 86C20 64 2 46 2 26C2 12 13 2 27 2C37 2 45 8 50 16C55 8 63 2 73 2C87 2 98 12 98 26C98 46 80 64 50 86Z"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div class="app" lang="en">
-  <aside class="rail">
-    <div>
-      <h1>SO-101 Digital Twin</h1>
-      <div class="status"><i></i>Simulation · real arm not connected</div>
+  <aside class="rail" id="rail">
+    <div class="brand">
+      <svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
+      <div><h1>Kitty Arm</h1><p>SO-101 digital twin · simulation, arm not connected</p></div>
     </div>
 
     <section aria-labelledby="t-h">
-      <h2 id="t-h">Gripper position (cm from base)</h2>
+      <h2 id="t-h">Gripper target (cm from base)</h2>
       <div class="xyz">
         <label>X forward<input id="tx" type="number" step="0.5"></label>
         <label>Y left<input id="ty" type="number" step="0.5"></label>
@@ -101,25 +142,25 @@ section { display: grid; gap: 10px; }
         <button id="m-free" aria-pressed="false">Free</button>
       </div>
       <div class="reach ok" id="reach">Reachable</div>
-      <div class="btns">
-        <button class="btn primary" id="go">Run move</button>
-        <button class="btn" id="home">Home</button>
-        <button class="btn stop" id="stop">Stop</button>
+      <div class="run-row">
+        <button class="pill" id="home">Home</button>
+        <button class="heart" id="go" aria-label="Run move"><svg fill="var(--pink)"><use href="#heart"/></svg><span>Run</span></button>
+        <button class="pill stop" id="stop">Stop</button>
       </div>
     </section>
 
     <section aria-labelledby="o-h">
-      <h2 id="o-h">Objects on the table</h2>
+      <h2 id="o-h">Kitties on the table</h2>
       <div class="objs">
-        <div class="obj"><b><i style="background: var(--obj1)"></i>3 cm cube</b><button class="btn" data-pick="cube">Pick to tray</button></div>
-        <div class="obj"><b><i style="background: var(--obj2)"></i>Small can</b><button class="btn" data-pick="can">Pick to tray</button></div>
-        <div class="obj"><b><i style="background: var(--obj3)"></i>Pen</b><button class="btn" data-pick="pen">Pick to tray</button></div>
+        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>Big kitty, pink bow</b><button class="pill" data-pick="big">Pick to tray</button></div>
+        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--bow-red)"><use href="#kitty"/></svg>Kitty, red bow</b><button class="pill" data-pick="red">Pick to tray</button></div>
+        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--pink-soft)"><use href="#kitty"/></svg>Mini kitty</b><button class="pill" data-pick="mini">Pick to tray</button></div>
       </div>
-      <button class="btn" id="reset">Reset objects</button>
+      <button class="pill" id="reset">Put the kitties back</button>
     </section>
 
     <section aria-labelledby="j-h">
-      <h2 id="j-h">Joints (blue ghost)</h2>
+      <h2 id="j-h">Joints (pink ghost)</h2>
       <div class="joint"><span>Base yaw</span><output id="o-shoulder_pan"></output><input type="range" id="s-shoulder_pan" step="0.01" aria-label="Base yaw"></div>
       <div class="joint"><span>Shoulder</span><output id="o-shoulder_lift"></output><input type="range" id="s-shoulder_lift" step="0.01" aria-label="Shoulder"></div>
       <div class="joint"><span>Elbow</span><output id="o-elbow_flex"></output><input type="range" id="s-elbow_flex" step="0.01" aria-label="Elbow"></div>
@@ -128,18 +169,24 @@ section { display: grid; gap: 10px; }
       <div class="joint"><span>Gripper</span><output id="o-gripper"></output><input type="range" id="s-gripper" step="0.01" aria-label="Gripper"></div>
     </section>
 
-    <p class="note">Grey arm: where the arm is now. Blue ghost: where it goes when you press Run move. A red ghost means the target is out of reach.</p>
+    <p class="note">White arm: where the arm is now. Pink ghost: where it goes when you press the heart. An orange ghost means the target is out of reach.</p>
     <p class="note">When the kit arrives, a small Python service on the Raspberry Pi will connect this page to the motors and the real cameras.</p>
   </aside>
 
   <div class="view">
     <canvas id="scene" aria-label="3D view of the arm"></canvas>
+    <svg class="deco peek" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
+    <svg class="deco k2" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--bow-red)"><use href="#kitty"/></svg>
+    <svg class="deco k3" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--pink-soft)"><use href="#kitty"/></svg>
+    <svg class="deco k4" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
+    <svg class="deco h1" viewBox="0 0 100 90" aria-hidden="true" fill="var(--pink)"><use href="#heart"/></svg>
+    <svg class="deco h2" viewBox="0 0 100 90" aria-hidden="true" fill="var(--pink-soft)"><use href="#heart"/></svg>
     <div class="insets" aria-hidden="true">
       <div class="inset" id="inset-top"><span>Table camera</span></div>
       <div class="inset" id="inset-wrist"><span>Wrist camera</span></div>
     </div>
-    <div class="hint">Drag the colored arrows on the blue ball to move the gripper. Click an object to target it.</div>
-    <svg class="smile" id="smile" viewBox="0 0 34 34" role="img" aria-label="Twin status"><circle cx="17" cy="17" r="15" fill="var(--smile)"/><ellipse class="eye" cx="12" cy="14" rx="2" ry="2.6" fill="#2a2108"/><ellipse class="eye" cx="22" cy="14" rx="2" ry="2.6" fill="#2a2108"/><path class="mouth-happy" d="M10.5 20.5Q17 26.5 23.5 20.5" fill="none" stroke="#2a2108" stroke-width="2" stroke-linecap="round"/><path class="mouth-sad" d="M11.5 24Q17 19.5 22.5 24" fill="none" stroke="#2a2108" stroke-width="2" stroke-linecap="round"/></svg>
+    <div class="hint">Drag the arrows on the pink heart to move the gripper. Click a kitty to target it.</div>
+    <svg class="status-kitty" id="kittyStatus" viewBox="0 0 120 100" role="img" aria-label="Twin status" style="--bow: var(--pink)"><use href="#kitty"/><path class="tear" d="M34 70Q30 78 33 82Q37 85 39 80Q40 76 34 70Z" fill="#7fd3ff" stroke="var(--kitty-line)" stroke-width="2"/></svg>
     <div class="loading" id="loading">Loading arm…</div>
   </div>
 </div>
@@ -160,6 +207,13 @@ const JOINTS = [...ARM, 'gripper'];
 const LIMITS = { ...R.limits };
 const OPEN = 0.9;
 
+// faint kitty pattern behind the control rail
+{
+  const k = `<g fill='none' stroke='${css('--pink')}' stroke-width='3' stroke-linejoin='round' stroke-linecap='round' opacity='0.09'><path d='M18 46Q12 12 22 8Q31 6 48 26M102 46Q108 12 98 8Q89 6 72 26'/><ellipse cx='60' cy='58' rx='50' ry='36'/><ellipse cx='89' cy='20' rx='16' ry='8'/></g>`;
+  const tile = `<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 300 300'><g transform='translate(20 20)'>${k}</g><g transform='translate(170 170) scale(.8)'>${k}</g></svg>`;
+  document.getElementById('rail').style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(tile)}")`;
+}
+
 // ---------- renderer, scene, cameras ----------
 const canvas = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -170,44 +224,69 @@ camera.position.set(0.78, 0.5, 0.62);
 const orbit = new OrbitControls(camera, canvas);
 orbit.target.set(0.17, 0.1, 0.02);
 orbit.enableDamping = true;
-scene.add(new THREE.HemisphereLight(0xffffff, 0x3a434b, 1.5));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x4a2a3a, 1.5));
 const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(0.6, 1.2, 0.4); scene.add(sun);
-const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-0.6, 0.4, -0.5); scene.add(fill);
+const fill = new THREE.DirectionalLight(0xffc2dc, 0.6); fill.position.set(-0.6, 0.4, -0.5); scene.add(fill);
 
 // robot frame: X forward, Y left, Z up (URDF). three.js is Y up, so turn the whole robot world.
 const world = new THREE.Group(); world.rotation.x = -Math.PI / 2; scene.add(world);
 
-// ---------- table, A4 calibration sheet, reach ring, tray ----------
+// ---------- table with a kitty pattern, A4 calibration sheet, reach ring, tray ----------
+function kittyTile(bg, line) {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = line; g.lineWidth = 4; g.lineJoin = g.lineCap = 'round';
+  g.translate(68, 78); g.scale(1, 1);
+  g.stroke(new Path2D('M18 46Q12 12 22 8Q31 6 48 26M102 46Q108 12 98 8Q89 6 72 26'));
+  g.beginPath(); g.ellipse(60, 58, 50, 36, 0, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.ellipse(77, 18, 12, 9, -0.44, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.ellipse(101, 22, 12, 9, 0.44, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = line; for (const x of [40, 80]) { g.beginPath(); g.ellipse(x, 60, 4.5, 6.5, 0, 0, Math.PI * 2); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(9, 7.5); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
 const tableMat = new THREE.MeshStandardMaterial({ roughness: 0.95 });
 const table = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.0), tableMat); table.position.set(0.15, 0, -0.0025); world.add(table);
-const gridMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.8 });
-const gridGeo = new THREE.BufferGeometry(); const gp = [];
-for (let x = -0.4; x <= 0.701; x += 0.05) gp.push(x, -0.5, -0.002, x, 0.5, -0.002);
-for (let y = -0.5; y <= 0.501; y += 0.05) gp.push(-0.45, y, -0.002, 0.75, y, -0.002);
-gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); world.add(new THREE.LineSegments(gridGeo, gridMat));
-const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.297, 0.21), new THREE.MeshStandardMaterial({ color: 0xc9d0d6, roughness: 1 }));
-sheet.position.set(0.12 + 0.1485, 0, -0.0015); world.add(sheet);
+const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.297, 0.21), new THREE.MeshStandardMaterial({ roughness: 1 }));
+sheet.position.set(0.12 + 0.1485, 0, -0.001); world.add(sheet);
 const ringMat = new THREE.LineDashedMaterial({ dashSize: 0.01, gapSize: 0.008 });
 const ring = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 121 }, (_, i) => new THREE.Vector3(0.42 * Math.cos(i / 60 * Math.PI) + 0.039, 0.42 * Math.sin(i / 60 * Math.PI), 0))), ringMat);
 ring.computeLineDistances(); world.add(ring);
 const TRAY = [0.09, 0.2];
-const trayMat = new THREE.MeshStandardMaterial({ roughness: 0.8 });
+const trayMat = new THREE.MeshStandardMaterial({ roughness: 0.6 });
 const tray = new THREE.Group(); world.add(tray); tray.position.set(TRAY[0], TRAY[1], 0);
 for (const [sx, sy, px, py] of [[0.1, 0.006, 0, 0.047], [0.1, 0.006, 0, -0.047], [0.006, 0.1, 0.047, 0], [0.006, 0.1, -0.047, 0]]) {
   const w = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, 0.025), trayMat); w.position.set(px, py, 0.0125); tray.add(w);
 }
 
-// ---------- objects ----------
-const objMats = [1, 2, 3].map(() => new THREE.MeshStandardMaterial({ roughness: 0.55 }));
+// ---------- kitty heads to pick up (built from simple shapes, facing +X) ----------
 const objects = {};
-function addObj(key, geo, mat, home, grip, graspZ) {
-  const m = new THREE.Mesh(geo, mat); m.userData = { key, home, grip, graspZ }; world.add(m); objects[key] = m; return m;
+function makeKitty(key, w, bow, home) {
+  const g = new THREE.Group();
+  const white = new THREE.MeshStandardMaterial({ color: 0xfffafc, roughness: 0.5 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x1a0c12, roughness: 0.4 });
+  const nose = new THREE.MeshStandardMaterial({ color: 0xf5c542, roughness: 0.5 });
+  const bowM = new THREE.MeshStandardMaterial({ color: bow, roughness: 0.45 });
+  const dx = 0.8 * w, h = 0.82 * w, zc = h / 2;
+  const part = (geo, mat, [x, y, z], [sx, sy, sz] = [1, 1, 1], rx = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.x = rx; g.add(m); return m; };
+  const ball = new THREE.SphereGeometry(1, 32, 20);
+  part(ball, white, [0, 0, zc], [dx / 2, w / 2, h / 2]);
+  for (const s of [1, -1]) {
+    part(new THREE.ConeGeometry(0.19 * w, 0.36 * w, 20), white, [0, s * 0.3 * w, zc + 0.5 * h], [1, 1, 1], Math.PI / 2 - s * 0.45);
+    part(ball, dark, [dx / 2 * 0.93, s * 0.17 * w, zc + 0.02 * h], [0.02 * w, 0.045 * w, 0.065 * w]);
+    for (const k of [-1, 0, 1]) part(new THREE.CylinderGeometry(0.006 * w, 0.006 * w, 0.26 * w, 6), dark, [dx / 2 * 0.72, s * 0.5 * w, zc - 0.08 * h + k * 0.07 * h], [1, 1, 1], s * k * 0.25);
+  }
+  part(ball, nose, [dx / 2 * 0.97, 0, zc - 0.12 * h], [0.02 * w, 0.055 * w, 0.04 * w]);
+  for (const s of [1, -1]) part(ball, bowM, [0.05 * w, 0.28 * w + s * 0.12 * w, zc + 0.58 * h], [0.06 * w, 0.13 * w, 0.09 * w], -s * 0.45);
+  part(ball, bowM, [0.06 * w, 0.28 * w, zc + 0.58 * h], [0.055 * w, 0.055 * w, 0.055 * w]);
+  g.userData = { key, home, grip: Math.max(0, (w - 0.018) / 0.08), graspZ: zc };
+  world.add(g); objects[key] = g;
 }
-const can = addObj('can', new THREE.CylinderGeometry(0.012, 0.012, 0.04, 32), objMats[1], [0.24, 0.1, 0.02, Math.PI / 2, 0], 0.15, 0.03);
-addObj('cube', new THREE.BoxGeometry(0.03, 0.03, 0.03), objMats[0], [0.2, -0.06, 0.015, 0, 0.4], 0.25, 0.02);
-addObj('pen', new THREE.BoxGeometry(0.012, 0.13, 0.012), objMats[2], [0.29, -0.02, 0.006, 0, 0.25], 0.02, 0.004);
+makeKitty('big', 0.04, 0xff5fa2, [0.24, 0.1, -0.35]);
+makeKitty('red', 0.032, 0xff3b5c, [0.2, -0.06, -0.6]);
+makeKitty('mini', 0.026, 0xffb3d1, [0.29, -0.02, -0.8]);
 function resetObjects() {
-  for (const o of Object.values(objects)) { world.attach(o); const [x, y, z, rx, rz] = o.userData.home; o.position.set(x, y, z); o.rotation.set(rx, 0, rz); }
+  for (const o of Object.values(objects)) { world.attach(o); const [x, y, rz] = o.userData.home; o.position.set(x, y, 0); o.rotation.set(0, 0, rz); }
 }
 resetObjects();
 
@@ -226,8 +305,8 @@ function buildArm() {
   return { nodes, joints };
 }
 const solid = buildArm(), ghost = buildArm();
-const solidMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0 });
-const ghostMat = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.32, depthWrite: false, roughness: 0.6 });
+const solidMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0, color: 0xfff4f8 });
+const ghostMat = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.3, depthWrite: false, roughness: 0.6 });
 const packed = await (await fetch('meshes.json')).json();
 const bytes = str => Uint8Array.from(atob(str), c => c.charCodeAt(0)).buffer;
 for (const name of desc.links) {
@@ -251,9 +330,18 @@ const cur = { ...HOME };            // where the arm is
 let goal = { ...HOME };             // where the ghost is
 let reachable = true;
 
-// target marker + gizmo (lives in robot coordinates)
-const marker = new THREE.Mesh(new THREE.SphereGeometry(0.008, 24, 16), new THREE.MeshBasicMaterial());
-world.add(marker);
+// target marker: a small pink heart; the gizmo moves it in robot coordinates
+const marker = new THREE.Object3D(); world.add(marker);
+const markerMat = new THREE.MeshStandardMaterial({ roughness: 0.4, emissiveIntensity: 0.35 });
+{
+  const s = new THREE.Shape();
+  s.moveTo(0, -0.43); s.bezierCurveTo(-0.3, -0.21, -0.48, -0.03, -0.48, 0.17); s.bezierCurveTo(-0.48, 0.31, -0.37, 0.41, -0.23, 0.41);
+  s.bezierCurveTo(-0.13, 0.41, -0.05, 0.35, 0, 0.27); s.bezierCurveTo(0.05, 0.35, 0.13, 0.41, 0.23, 0.41);
+  s.bezierCurveTo(0.37, 0.41, 0.48, 0.31, 0.48, 0.17); s.bezierCurveTo(0.48, -0.03, 0.3, -0.21, 0, -0.43);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.3, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 3 });
+  geo.translate(0, 0, -0.15); geo.scale(0.022, 0.022, 0.022);
+  const hm = new THREE.Mesh(geo, markerMat); hm.rotation.set(Math.PI / 2, 0, Math.PI / 2, 'ZYX'); marker.add(hm);
+}
 const gizmo = new TransformControls(camera, canvas);
 gizmo.setSpace('local'); gizmo.setSize(0.7); gizmo.attach(marker); scene.add(gizmo);
 gizmo.addEventListener('dragging-changed', e => { orbit.enabled = !e.value; });
@@ -270,13 +358,14 @@ function syncUI() {
   for (const n of JOINTS) { $('s-' + n).value = goal[n]; $('o-' + n).textContent = deg(goal[n]); }
   const t = R.tip(goal);
   for (const [i, k] of ['tx', 'ty', 'tz'].entries()) if (document.activeElement !== $(k)) $(k).value = (t[i] * 100).toFixed(1);
-  const r = $('reach'); r.textContent = reachable ? 'Reachable' : 'Out of reach: the ghost shows the closest pose'; r.className = 'reach ' + (reachable ? 'ok' : 'no');
-  $('smile').classList.toggle('sad', !reachable);
+  const r = $('reach'); r.textContent = reachable ? 'Reachable' : 'Out of reach: showing the closest pose'; r.className = 'reach ' + (reachable ? 'ok' : 'no');
+  $('kittyStatus').classList.toggle('sad', !reachable);
 }
 function setGhost(q, moveMarker) {
   goal = { ...q }; applyQ(ghost, goal);
   if (moveMarker) { marker.position.set(...R.tip(goal)); reachable = true; }
-  ghostMat.color.set(reachable ? css('--accent') : css('--warn')); marker.material.color.set(reachable ? css('--accent') : css('--warn'));
+  const c = reachable ? css('--pink') : css('--warn');
+  ghostMat.color.set(c); markerMat.color.set(c); markerMat.emissive.set(c);
   syncUI();
 }
 function solveFor(t, moveMarker) {
@@ -293,7 +382,7 @@ $('m-down').onclick = () => setMode('down'); $('m-free').onclick = () => setMode
 // ---------- motion ----------
 let token = 0;
 const busyEls = ['go', 'home', 'reset', ...document.querySelectorAll('[data-pick]')];
-const busy = b => { busyEls.forEach(e => { (typeof e === 'string' ? $(e) : e).disabled = b; }); $('smile').classList.toggle('busy', b); };
+const busy = b => { busyEls.forEach(e => { (typeof e === 'string' ? $(e) : e).disabled = b; }); $('kittyStatus').classList.toggle('busy', b); };
 function animateTo(qT, my) {
   return new Promise(res => {
     const q0 = { ...cur }, names = Object.keys(qT);
@@ -327,30 +416,31 @@ async function pick(key) {
     && await animateTo({ ...cur, gripper: g }, my);
   if (ok) {
     solid.nodes.gripper_frame_link.attach(o);
-    const moved = await go([wp.x, wp.y, gz + 0.08], g) && await go([TRAY[0], TRAY[1], 0.09], g) && await go([TRAY[0], TRAY[1], 0.05], g)
+    const moved = await go([wp.x, wp.y, gz + 0.08], g) && await go([TRAY[0], TRAY[1], 0.09], g) && await go([TRAY[0], TRAY[1], gz + 0.03], g)
       && await animateTo({ ...cur, gripper: OPEN }, my);
-    if (moved) { world.attach(o); o.position.z = o.userData.home[2]; await go([TRAY[0], TRAY[1], 0.1], OPEN) && await animateTo(HOME, my); setGhost(HOME, true); }
+    if (moved) { world.attach(o); o.position.z = 0; o.rotation.x = 0; o.rotation.y = 0; await go([TRAY[0], TRAY[1], 0.1], OPEN) && await animateTo(HOME, my); setGhost(HOME, true); }
   }
   busy(false);
 }
 document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => pick(b.dataset.pick));
 
-// click an object in the scene to select it
+// click a kitty in the scene to target it
 const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let downAt = null;
 canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
 canvas.addEventListener('pointerup', e => {
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4 || gizmo.dragging) return;
   const r = canvas.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
   ray.setFromCamera(ptr, camera);
-  const hit = ray.intersectObjects(Object.values(objects), false)[0];
-  if (hit) { const wp = new THREE.Vector3(); hit.object.getWorldPosition(wp); world.worldToLocal(wp); const t = [wp.x, wp.y, hit.object.userData.graspZ + 0.07]; marker.position.set(...t); solveFor(t, false); }
+  const hit = ray.intersectObjects(Object.values(objects), true)[0];
+  let o = hit && hit.object; while (o && !o.userData.key) o = o.parent;
+  if (o) { const wp = new THREE.Vector3(); o.getWorldPosition(wp); world.worldToLocal(wp); const t = [wp.x, wp.y, o.userData.graspZ + 0.07]; marker.position.set(...t); solveFor(t, false); }
 });
 
-// ---------- theme ----------
+// ---------- colours from the page tokens ----------
 function paint() {
   scene.background = new THREE.Color(css('--viewport'));
-  tableMat.color.set(css('--table')); gridMat.color.set(css('--grid')); ringMat.color.set(css('--accent')); trayMat.color.set(css('--muted'));
-  objMats.forEach((m, i) => m.color.set(css(`--obj${i + 1}`)));
+  tableMat.map = kittyTile(css('--table'), css('--grid')); tableMat.needsUpdate = true;
+  sheet.material.color.set(css('--paper')); ringMat.color.set(css('--pink')); trayMat.color.set(css('--pink-soft'));
   setGhost(goal, false);
 }
 
@@ -371,9 +461,10 @@ function renderInset(el, cam) {
   const r = el.getBoundingClientRect(), c = canvas.getBoundingClientRect();
   const x = r.left - c.left, y = c.bottom - r.bottom;
   renderer.setScissor(x, y, r.width, r.height); renderer.setViewport(x, y, r.width, r.height);
+  const gv = ghost.nodes.base_link.visible;
   gizmo.visible = false; marker.visible = false; ghost.nodes.base_link.visible = false;
   renderer.render(scene, cam);
-  gizmo.visible = true; marker.visible = true; ghost.nodes.base_link.visible = true;
+  gizmo.visible = true; marker.visible = true; ghost.nodes.base_link.visible = gv;
 }
 
 function resize() {
@@ -383,6 +474,8 @@ function resize() {
 new ResizeObserver(resize).observe(canvas);
 function frame() {
   orbit.update();
+  // the ghost only shows up when it differs from the real arm
+  ghost.nodes.base_link.visible = JOINTS.some(n => Math.abs(goal[n] - cur[n]) > 0.01);
   const w = canvas.clientWidth, h = canvas.clientHeight;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.render(scene, camera);
   renderer.setScissorTest(true);
