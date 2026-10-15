@@ -31,8 +31,16 @@ Files:
   boards ("Adafruit PWM Servo Driver Library") or straight from Arduino Mega pins (`USE_PCA9685 0`)
 
 Hexapod serial protocol (115200 baud, one line each):
-`S` + 18 comma-separated angles in degrees (R1 coxa, femur, tibia, R2 …, R3 …, L1 …, L2 …, L3 …),
-`R` to relax all servos, `?` to get `HEXAPOD v1` back.
+`S` + 18 comma-separated angles in degrees in the robot's own leg order (Leg 1 coxa, femur,
+tibia, Leg 2 …, Leg 6), `R` to relax all servos, `?` to get `HEXAPOD v1` back. The sketch eases
+each servo toward its angle (at most 4° per 20 ms) and powers them up two at a time.
+
+Calibration: the page starts from the robot's working standing pose (the angles from its old
+code). The median femur and tibia angles give the stance height and spread, and each servo's
+difference from them becomes its trim, so the page's stand pose sends exactly those angles.
+Defaults for this robot: Arduino UNO, PCA9685 boards at 0x40 and 0x41 with the channel map from
+CHANNELS.md, legs 1-3 on the right and 4-6 on the left, tibia servos turning opposite to the
+femurs.
 
 Rebuild arm assets: `python3 build_meshes.py <path to SO-ARM100/Simulation/SO101>`
 Preview locally: `python3 -m http.server` in this folder, then open http://localhost:8000

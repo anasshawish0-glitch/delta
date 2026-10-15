@@ -84,16 +84,45 @@ export function toBody(p, b) {
   return [x2, cr * y1 + sr * z2, -sr * y1 + cr * z2];          // undo roll
 }
 
-// servo degrees, clamped to 0-180; out.clipped is true when a servo would need to go further
-export function servoAngles(qs, cal) {
+// How the robot's own leg numbers (the order on the wire) map onto the legs R1, R2, R3, L1, L2, L3.
+export const LEG_ORDERS = {
+  'side-right': { label: 'Legs 1-3 right, 4-6 left, front to back', order: [0, 1, 2, 3, 4, 5] },
+  'around-right': { label: 'Around the body from front right, clockwise', order: [0, 1, 2, 5, 4, 3] },
+  'side-left': { label: 'Legs 1-3 left, 4-6 right, front to back', order: [3, 4, 5, 0, 1, 2] },
+  'around-left': { label: 'Around the body from front left, anticlockwise', order: [3, 4, 5, 2, 1, 0] },
+};
+const SAME = [0, 1, 2, 3, 4, 5];
+
+// Servo degrees in wire order (leg 1 coxa, femur, tibia, leg 2 ...), clamped to 0-180;
+// out.clipped is true when a servo would need to go further. Wire leg n drives body leg order[n].
+export function servoAngles(qs, cal, order = SAME) {
   const out = []; out.clipped = false;
-  qs.forEach((q, leg) => q.forEach((a, j) => {
-    const i = leg * 3 + j;
+  order.forEach((leg, n) => qs[leg].forEach((a, j) => {
+    const i = n * 3 + j;
     const v = 90 + (cal.invert[i] ? -1 : 1) * a / DEG + cal.trim[i];
     if (v < -0.5 || v > 180.5) out.clipped = true;
     out.push(Math.round(Math.min(180, Math.max(0, v))));
   }));
   return out;
+}
+
+const median = a => { const s = [...a].sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+
+// Calibrate from the servo angles of a standing pose that works on the real robot (wire order).
+// All legs stand alike, so the median femur and tibia angles give the stance (height, spread);
+// what each servo differs from that is its trim. Trims bigger than 60 are reported as odd.
+export function calibrateFromStand(d, stand, invert) {
+  const sgn = i => (invert[i] ? -1 : 1);
+  const q1 = median([0, 1, 2, 3, 4, 5].map(n => sgn(n * 3 + 1) * (stand[n * 3 + 1] - 90))) * DEG;
+  const q2 = median([0, 1, 2, 3, 4, 5].map(n => sgn(n * 3 + 2) * (stand[n * 3 + 2] - 90))) * DEG;
+  const t = q1 + q2 - Math.PI / 2;
+  const height = Math.round(-(d.femur * Math.sin(q1) + d.tibia * Math.sin(t)));
+  const spread = Math.round((d.femur * Math.cos(q1) + d.tibia * Math.cos(t)) / (d.femur + d.tibia) * 100);
+  // joint angles of the rounded stance, the same for every leg
+  const m = legMounts(d)[0], f = homeFeet(d, spread)[0];
+  const q = legIK(d, m, [f[0], f[1], -height]).q;
+  const trim = stand.map((v, i) => Math.round(v - (90 + sgn(i) * q[i % 3] / DEG)));
+  return { height, spread, trim, odd: trim.map((v, i) => (Math.abs(v) > 60 ? i : -1)).filter(i => i >= 0) };
 }
 
 // True when every leg can hold the feet at this spread for body heights lo..hi with each joint

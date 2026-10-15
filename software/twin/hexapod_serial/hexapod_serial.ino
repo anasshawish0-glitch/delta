@@ -1,90 +1,95 @@
 // Kitty Hexapod: drives the 18 servos of the hexapod from the Kitty Twin web page over USB.
 //
 // The page sends one line per frame at 115200 baud:
-//   S90,90,90,...   18 angles in degrees (0-180), in the order of the page's Servo output table:
-//                   R1 coxa, femur, tibia, R2 ..., R3 ..., L1 ..., L2 ..., L3 ...
-//                   (R = right, L = left, 1 = front, 2 = middle, 3 = back)
+//   S55,105,60,...  18 angles in degrees (0-180) in the robot's own leg order:
+//                   Leg 1 coxa, femur, tibia, Leg 2 ..., Leg 6
 //   R               relax: switch every servo off
 //   ?               the sketch answers "HEXAPOD v1"
 //
-// Two ways to wire the servos; pick one with USE_PCA9685:
-//   1: two PCA9685 boards (needs the "Adafruit PWM Servo Driver Library")
-//   0: servos plugged straight into an Arduino Mega (uses the built-in Servo library)
-// Power the servos from their own 5-6 V supply (for example the XL4016 regulator), never from
-// the Arduino 5 V pin, and connect the grounds together.
+// Servos move toward each new angle by at most MAX_STEP degrees every 20 ms and switch on two at
+// a time, so a jump in the commands never becomes a current spike through all 18 at once.
+//
+// Wiring (CHANNELS.md): Arduino UNO, two PCA9685 boards, B1 = 0x40, B2 = 0x41 (A0 bridged).
+// Servo power goes from the regulator straight to each board's green terminal, never through the
+// Arduino or the header pins, with the grounds shared.
 
 #define USE_PCA9685 1
 
-// Pulse width for 0 and 180 degrees. MG996R servos use about 500-2500 us.
-const uint16_t MIN_US = 500;
-const uint16_t MAX_US = 2500;
+const float MAX_STEP = 4;  // degrees per 20 ms (200°/s); an MG996R tops out near 350°/s
 
 #if USE_PCA9685
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
-Adafruit_PWMServoDriver boardA(0x40);  // right legs
-Adafruit_PWMServoDriver boardB(0x41);  // left legs (solder the A0 jumper on this board)
+// Angle -> PCA9685 ticks. Use the same three numbers as your hexapod_walk_final.ino, so that an
+// angle means the same horn position there and here (these are Adafruit's example values).
+const uint16_t SERVOMIN = 150;   // ticks at 0°
+const uint16_t SERVOMAX = 600;   // ticks at 180°
+const long OSC_FREQ = 27000000;  // what your code passes to setOscillatorFrequency (library default 25000000)
 
-// Where each servo is plugged in, in the order the page sends them.
-// 0-15 = channel on board A, 16-31 = channel 0-15 on board B. Change these to match your wiring.
-const uint8_t CHANNEL[18] = {
-  0, 1, 2,     // R1 coxa, femur, tibia
-  4, 5, 6,     // R2
-  8, 9, 10,    // R3
-  16, 17, 18,  // L1
-  20, 21, 22,  // L2
-  24, 25, 26,  // L3
+Adafruit_PWMServoDriver board[2] = { Adafruit_PWMServoDriver(0x40), Adafruit_PWMServoDriver(0x41) };
+
+// Board (1 or 2) and channel of every joint, by leg: { coxa, femur, tibia }
+const uint8_t MB[6][3] = {
+  { 1, 1, 1 },  // Leg 1
+  { 1, 1, 1 },  // Leg 2
+  { 1, 1, 1 },  // Leg 3
+  { 1, 2, 2 },  // Leg 4
+  { 2, 2, 2 },  // Leg 5
+  { 2, 2, 2 },  // Leg 6
+};
+const uint8_t MC[6][3] = {
+  { 10, 9, 11 },  // Leg 1
+  { 7, 6, 5 },    // Leg 2
+  { 0, 1, 2 },    // Leg 3
+  { 15, 1, 3 },   // Leg 4
+  { 13, 10, 8 },  // Leg 5
+  { 7, 6, 5 },    // Leg 6
 };
 
-Adafruit_PWMServoDriver &boardFor(uint8_t ch) { return ch < 16 ? boardA : boardB; }
-
-void startBoard(Adafruit_PWMServoDriver &b) {
-  b.begin();
-  b.setOscillatorFrequency(27000000);
-  b.setPWMFreq(50);
-}
 void startServos() {
   Wire.begin();
   Wire.setClock(400000);
-  startBoard(boardA);
-  startBoard(boardB);
+  for (Adafruit_PWMServoDriver &b : board) {
+    b.begin();
+    b.setOscillatorFrequency(OSC_FREQ);
+    b.setPWMFreq(50);
+  }
 }
-void writeUs(uint8_t i, uint16_t us) { boardFor(CHANNEL[i]).writeMicroseconds(CHANNEL[i] & 15, us); }
-void relaxOne(uint8_t i) { boardFor(CHANNEL[i]).setPWM(CHANNEL[i] & 15, 0, 4096); }  // full off
+void writeAngle(uint8_t i, float deg) {
+  uint16_t ticks = SERVOMIN + (uint16_t)(deg * (SERVOMAX - SERVOMIN) / 180 + 0.5);
+  board[MB[i / 3][i % 3] - 1].setPWM(MC[i / 3][i % 3], 0, ticks);
+}
+void relaxOne(uint8_t i) { board[MB[i / 3][i % 3] - 1].setPWM(MC[i / 3][i % 3], 0, 4096); }  // full off
 
 #else
 #include <Servo.h>
 
-// Mega pin for each servo, in the order the page sends them. Change these to match your wiring.
-const uint8_t PIN[18] = {
-  22, 23, 24,  // R1 coxa, femur, tibia
-  25, 26, 27,  // R2
-  28, 29, 30,  // R3
-  31, 32, 33,  // L1
-  34, 35, 36,  // L2
-  37, 38, 39,  // L3
+// For servos plugged straight into an Arduino Mega: pulse width at 0° and 180°, and the pin of
+// every joint by leg { coxa, femur, tibia }.
+const uint16_t MIN_US = 500;
+const uint16_t MAX_US = 2500;
+const uint8_t PIN[6][3] = {
+  { 22, 23, 24 }, { 25, 26, 27 }, { 28, 29, 30 }, { 31, 32, 33 }, { 34, 35, 36 }, { 37, 38, 39 },
 };
 Servo servo[18];
 
 void startServos() {}
-void writeUs(uint8_t i, uint16_t us) {
-  if (!servo[i].attached()) servo[i].attach(PIN[i], MIN_US, MAX_US);
-  servo[i].writeMicroseconds(us);
+void writeAngle(uint8_t i, float deg) {
+  if (!servo[i].attached()) servo[i].attach(PIN[i / 3][i % 3], MIN_US, MAX_US);
+  servo[i].writeMicroseconds(MIN_US + (uint16_t)(deg * (MAX_US - MIN_US) / 180 + 0.5));
 }
 void relaxOne(uint8_t i) { servo[i].detach(); }
 #endif
 
+float target[18], cur[18];
+bool wanted[18], live[18];  // has a target / is powered and at cur
+unsigned long lastTick = 0;
 char line[100];
 uint8_t len = 0;
 
-void writeServo(uint8_t i, int deg) {
-  deg = constrain(deg, 0, 180);
-  writeUs(i, map(deg, 0, 180, MIN_US, MAX_US));
-}
-
 void relaxAll() {
-  for (uint8_t i = 0; i < 18; i++) relaxOne(i);
+  for (uint8_t i = 0; i < 18; i++) { relaxOne(i); wanted[i] = live[i] = false; }
 }
 
 void handle(char *s) {
@@ -98,11 +103,27 @@ void handle(char *s) {
       if (!p) break;
       p++;
     }
-    if (n == 18) for (uint8_t i = 0; i < 18; i++) writeServo(i, deg[i]);
+    if (n == 18) for (uint8_t i = 0; i < 18; i++) { target[i] = constrain(deg[i], 0, 180); wanted[i] = true; }
   } else if (s[0] == 'R') {
     relaxAll();
   } else if (s[0] == '?') {
     Serial.println(F("HEXAPOD v1"));
+  }
+}
+
+// every 20 ms: switch on up to two waiting servos, ease the others toward their targets
+void tick() {
+  uint8_t woke = 0;
+  for (uint8_t i = 0; i < 18; i++) {
+    if (!wanted[i]) continue;
+    if (!live[i]) {
+      if (woke == 2) continue;
+      cur[i] = target[i]; live[i] = true; woke++;
+      writeAngle(i, cur[i]);
+      continue;
+    }
+    float d = constrain(target[i] - cur[i], -MAX_STEP, MAX_STEP);
+    if (d != 0) { cur[i] += d; writeAngle(i, cur[i]); }
   }
 }
 
@@ -124,4 +145,5 @@ void loop() {
       len = 0;  // line too long: drop it
     }
   }
+  if (millis() - lastTick >= 20) { lastTick = millis(); tick(); }
 }
