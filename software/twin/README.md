@@ -25,8 +25,8 @@ out first and then lowers the body; standing up rises first and then steps the f
 Files:
 - `kitty.css`, `kitty.js`: shared theme, the animated corner mascot, patterns and 3D table items
 - `theme.js`: the look switch. "Kitty" is the pink Hello-Kitty style; "Libra" is black, bone and
-  gold with an original ram-horned night goat (bell eyes, a mask, gold flecks) that gets furious
-  instead of sad, golden bell items, a bell-eye Run button and ram horns on the hexapod. Pick it
+  gold with an original ram-horned night goat (bell eyes, a mask, gold flecks) that goes mad
+  instead of sad (a flame spiral burns on its mask, fire rises from its head), golden bell items, a bell-eye Run button and ram horns on the hexapod. Pick it
   with the Kitty / Libra buttons or `?theme=libra`; the choice is remembered in the browser
 - `kin.js`: arm forward kinematics + damped least-squares IK (also runs in Node)
 - `robot.json`, `meshes.json`: arm model built from the official URDF by `build_meshes.py`
