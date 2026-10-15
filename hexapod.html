@@ -34,7 +34,11 @@ summary { font-family: var(--head); font-size: .95rem; font-weight: 600; color: 
 .check input { accent-color: var(--pink); width: 16px; height: 16px; }
 .servo-grid { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: 3px 10px; font-family: var(--mono); font-size: .78rem; font-variant-numeric: tabular-nums; }
 .servo-grid span { text-align: end; }
-.servo-grid .hd { color: var(--muted); font-family: var(--body); font-size: .72rem; }
+.servo-grid .hd, .stand-grid .hd { color: var(--muted); font-family: var(--body); font-size: .72rem; text-align: center; }
+.stand-grid { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: 4px 6px; align-items: center; font-size: .78rem; }
+.stand-grid b { font-weight: 700; }
+.stand-grid input { width: 100%; box-sizing: border-box; font-family: var(--mono); font-size: .82rem; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--ink); text-align: center; }
+.note.warn { color: var(--warn); }
 .servo-grid b { font-family: var(--body); font-weight: 700; text-align: start; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 a.pill { text-decoration: none; text-align: center; }
@@ -134,20 +138,25 @@ a.pill { text-decoration: none; text-align: center; }
     <details>
       <summary>Servo calibration</summary>
       <div class="cal">
-        <button class="pill" id="center">All servos to 90°</button>
-        <p class="note">Use this to fit the servo horns: coxa straight out from the body, femur level, claw tip straight below the knee.</p>
+        <label class="field">Leg numbers<select id="order"></select></label>
+        <h2>Standing angles from your old code</h2>
+        <div class="stand-grid" id="standGrid"><span></span><span class="hd">coxa</span><span class="hd">femur</span><span class="hd">tibia</span></div>
+        <button class="pill" id="calib">Calibrate from these angles</button>
+        <p class="note" id="calibNote">These angles stand the real robot up, so the page's stand pose sends exactly them and works out each servo's trim from them.</p>
+        <button class="pill" id="center">Neutral pose</button>
+        <p class="note">Every servo at its calibrated zero: coxa straight out from the body, femur level, claw tip straight below the knee.</p>
         <label class="field">Servo<select id="servo"></select></label>
-        <div class="joint"><span>Trim</span><output id="o-trim"></output><input type="range" id="trim" min="-30" max="30" step="1" aria-label="Trim"></div>
+        <div class="joint"><span>Trim</span><output id="o-trim"></output><input type="range" id="trim" min="-90" max="90" step="1" aria-label="Trim"></div>
         <label class="check"><input type="checkbox" id="invert"> Reverse direction</label>
         <button class="pill" id="test">Wiggle this servo</button>
-        <p class="note">Wiggle: the leg in the picture and the real one should move the same way. If not, tick Reverse.</p>
+        <p class="note">Wiggle turns the leg pink in the picture. The same leg on the robot should move the same way. Wrong leg: change Leg numbers. Wrong way: tick Reverse.</p>
         <h2>Servo output (°)</h2>
         <div class="servo-grid" id="grid"><span></span><span class="hd">coxa</span><span class="hd">femur</span><span class="hd">tibia</span></div>
         <a class="pill" href="hexapod_serial/hexapod_serial.ino" download>Download Arduino sketch</a>
       </div>
     </details>
 
-    <p class="note">The front is the side between the two front legs (R1 and L1). The sketch works with two PCA9685 boards (0x40 right legs, 0x41 left legs) or with the servos plugged straight into an Arduino Mega: set USE_PCA9685 and the channel or pin list at the top.</p>
+    <p class="note">The front is the side between the two front legs. The sketch already has your channel map (board 1 = 0x40, board 2 = 0x41); for servos plugged straight into an Arduino Mega set USE_PCA9685 to 0 and fill in the pin list.</p>
     <p class="note">Servos need their own 5–6 V supply with a few amps on the PCA9685 V+ terminal, not the Arduino 5 V pin. Settings are saved in this browser.</p>
   </aside>
 
@@ -172,7 +181,7 @@ setTimeout(() => { const l = document.getElementById('loading'); if (l && !l.hid
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { statusKitty, toNum, railPattern, kittyTile } from './kitty.js';
-import { JOINTS, LAYOUTS, KALEM, DEFAULT_DIMS, legNames, legMounts, homeFeet, legIK, toBody, servoAngles, sitSpread, makeGait } from './hexapod.js';
+import { JOINTS, LAYOUTS, LEG_ORDERS, KALEM, DEFAULT_DIMS, legNames, legMounts, homeFeet, legIK, toBody, servoAngles, sitSpread, calibrateFromStand, makeGait } from './hexapod.js';
 
 const $ = id => document.getElementById(id);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -180,15 +189,22 @@ railPattern($('rail'), css('--pink'));
 const kitty = statusKitty($('kittyStatus'));
 
 // ---------- settings, kept in this browser ----------
-const KEY = 'kitty-hexapod-v2';
+const KEY = 'kitty-hexapod-v3';
+// the robot's own standing pose (wire order: leg 1 coxa, femur, tibia, leg 2 ...)
+const STAND_REF = [55, 105, 60, 60, 110, 95, 65, 110, 80, 60, 120, 155, 40, 95, 60, 40, 95, 60];
 const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
+const is18 = a => Array.isArray(a) && a.length === 18;
 const dims = { ...DEFAULT_DIMS, ...saved.dims };
-const ui = { height: 110, spread: 38, speed: 60, lift: 35, ...saved.ui };
 const cal = {
-  trim: Array.isArray(saved.trim) && saved.trim.length === 18 ? saved.trim : new Array(18).fill(0),
-  invert: Array.isArray(saved.invert) && saved.invert.length === 18 ? saved.invert : new Array(18).fill(false),
+  stand: is18(saved.stand) ? saved.stand : [...STAND_REF],
+  // the tibia servo sits on the other side of the leg from the femur servo, so it turns the other way
+  invert: is18(saved.invert) ? saved.invert : Array.from({ length: 18 }, (_, i) => i % 3 === 2),
+  order: LEG_ORDERS[saved.order] ? saved.order : 'side-right',
 };
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ dims, ui, trim: cal.trim, invert: cal.invert })); } catch { /* private mode: settings last until reload */ } };
+const first = calibrateFromStand(dims, cal.stand, cal.invert);
+cal.trim = is18(saved.trim) ? saved.trim : first.trim;
+const ui = { height: first.height, spread: first.spread, speed: 60, lift: 35, ...saved.ui };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ dims, ui, trim: cal.trim, invert: cal.invert, order: cal.order, stand: cal.stand })); } catch { /* private mode: settings last until reload */ } };
 
 // ---------- scene ----------
 const canvas = $('scene');
@@ -287,19 +303,28 @@ function build() {
     tibia.add(box(20 * k, 58, 33 * k, black, [52 * k, 0, 11.5 * k]), box(14 * k, 44, 22 * k, black, [67 * k, 0, 16.5 * k]));
     tibia.add(plate(CLAW.map(([x, z]) => [x * k, z * k]), 18, black));
     const tip = new THREE.Mesh(new THREE.SphereGeometry(4.5, 16, 12), pinkM); tip.position.set(T - 3 * k, 0, 0.5 * k); tibia.add(tip);
-    legs.push({ coxa, femur, tibia });
+    const meshes = []; coxa.traverse(o => { if (o.isMesh) meshes.push([o, o.material]); });
+    legs.push({ coxa, femur, tibia, meshes });
   });
 
-  // names in the calibration list and the servo table
-  const sel = $('servo'), keep = +sel.value || 0; sel.innerHTML = '';
-  names.names.forEach((n, leg) => JOINTS.forEach((j, q) => sel.add(new Option(`${names.codes[leg]} ${n} · ${j}`, leg * 3 + q))));
-  sel.value = keep; codeCells.forEach((c, leg) => { c.textContent = names.codes[leg]; c.title = names.names[leg]; });
+  labelLegs();
   $('rectDims').hidden = dims.layout !== 'rect'; $('hexDims').hidden = !dims.layout.startsWith('hex');
   $('layoutNote').textContent = dims.layout === 'kalem'
     ? 'Hexapod design by Emre Kalem. Sizes measured from your print files; change them only if your build differs.'
     : 'Measure your robot joint to joint and type the sizes below.';
   for (const key of ['coxa', 'femur', 'tibia', 'length', 'width', 'radius']) $('d-' + key).value = +dims[key].toFixed(1);
 }
+
+// the robot's leg n (wire order) is body leg order[n]; lists and tables use the robot's numbers
+const order = () => LEG_ORDERS[cal.order].order;
+function labelLegs() {
+  const o = order(), sel = $('servo'), keep = +sel.value || 0; sel.innerHTML = '';
+  o.forEach((leg, n) => JOINTS.forEach((j, q) => sel.add(new Option(`Leg ${n + 1} · ${j} (${names.names[leg].toLowerCase()})`, n * 3 + q))));
+  sel.value = keep;
+  codeCells.forEach((c, n) => { c.textContent = `Leg ${n + 1}`; c.title = names.names[o[n]]; });
+  standCells.forEach((c, n) => { c.textContent = `Leg ${n + 1}`; c.title = names.names[o[n]]; });
+}
+function highlight(leg, on) { for (const [m, mat] of legs[leg].meshes) m.material = on ? pinkM : mat; }
 
 // ---------- motion state ----------
 const gait = makeGait();
@@ -320,7 +345,7 @@ function drive() {
   const l = Math.hypot(fx, fy); if (l > 1) { fx /= l; fy /= l; }
   w = Math.max(-1, Math.min(1, w));
   const s = ui.speed / 100;
-  return { vx: 140 * s * fx, vy: 110 * s * fy, wz: 0.6 * s * w };
+  return { vx: 100 * s * fx, vy: 80 * s * fy, wz: 0.45 * s * w };
 }
 
 function setSpread(s) {
@@ -468,10 +493,45 @@ const signed = v => `${v > 0 ? '+' : ''}${v}°`;
 const showCal = () => { const i = +sel.value; $('trim').value = cal.trim[i]; $('o-trim').textContent = signed(cal.trim[i]); $('invert').checked = cal.invert[i]; };
 sel.onchange = showCal;
 $('trim').addEventListener('input', () => { const i = +sel.value; cal.trim[i] = +$('trim').value; $('o-trim').textContent = signed(cal.trim[i]); save(); });
-$('invert').onchange = () => { cal.invert[+sel.value] = $('invert').checked; save(); };
-$('test').onclick = () => { test = { i: +sel.value, t: 0 }; wakeMotors(); };
+$('invert').onchange = () => { cal.invert[+sel.value] = $('invert').checked; calibrate(false); };
+$('test').onclick = () => {
+  if (test) highlight(test.leg, false);
+  test = { i: +sel.value, leg: order()[Math.floor(+sel.value / 3)], t: 0 }; highlight(test.leg, true); wakeMotors();
+};
+const orderSel = $('order');
+for (const [v, { label }] of Object.entries(LEG_ORDERS)) orderSel.add(new Option(label, v));
+orderSel.value = cal.order;
+orderSel.onchange = () => { cal.order = orderSel.value; save(); labelLegs(); };
 
-const cells = [], codeCells = [];
+// standing angles from the robot's old code -> stance and trims
+const standInputs = [], standCells = [];
+for (let n = 0; n < 6; n++) {
+  const b = document.createElement('b'); $('standGrid').append(b); standCells.push(b);
+  for (let j = 0; j < 3; j++) {
+    const el = document.createElement('input'); el.type = 'text'; el.inputMode = 'numeric'; el.autocomplete = 'off'; el.dir = 'ltr';
+    el.setAttribute('aria-label', `Leg ${n + 1} ${JOINTS[j]} standing angle`); el.value = cal.stand[n * 3 + j];
+    $('standGrid').append(el); standInputs.push(el);
+  }
+}
+function calibrate(fromTable) {
+  if (fromTable) {
+    const v = standInputs.map(el => Math.round(toNum(el.value)));
+    const bad = v.findIndex(x => !(x >= 0 && x <= 180));
+    if (bad >= 0) { $('calibNote').textContent = `Leg ${Math.floor(bad / 3) + 1} ${JOINTS[bad % 3]}: type an angle from 0 to 180.`; $('calibNote').className = 'note warn'; return; }
+    cal.stand = v; standInputs.forEach((el, i) => { el.value = v[i]; });
+  }
+  const r = calibrateFromStand(dims, cal.stand, cal.invert);
+  cal.trim = r.trim; ui.height = r.height; ui.spread = r.spread;
+  $('s-height').value = ui.height; $('s-spread').value = ui.spread; showSliders(); showCal();
+  SIT_SPREAD = sitSpread(dims, sitH, ui.height, ui.spread); save();
+  const odd = r.odd.map(i => `leg ${Math.floor(i / 3) + 1} ${JOINTS[i % 3]} (${r.trim[i] > 0 ? '+' : ''}${r.trim[i]}°)`);
+  $('calibNote').textContent = `Stance ${r.height} mm high, feet ${Math.round(r.spread / 100 * (dims.femur + dims.tibia))} mm out; trims set.` +
+    (odd.length ? ` Check ${odd.join(', ')}: far from the other legs. A typo, or its horn sits a few teeth off?` : '');
+  $('calibNote').className = 'note' + (odd.length ? ' warn' : '');
+}
+$('calib').onclick = () => calibrate(true);
+
+const cells = [], codeCells = [];  // servo output table, robot leg order
 for (let leg = 0; leg < 6; leg++) {
   const name = document.createElement('b'); $('grid').append(name); codeCells.push(name);
   for (let j = 0; j < 3; j++) { const c = document.createElement('span'); $('grid').append(c); cells.push(c); }
@@ -498,9 +558,9 @@ function update(dt, now) {
   allOk = true;
   const qs = centerMode ? mounts.map(() => [0, 0, 0]) : mounts.map((m, i) => { const r = legIK(dims, m, toBody(feet[i], b)); if (!r.ok) allOk = false; return r.q; });
   if (test) {
-    test.t += dt; const k = Math.floor(test.i / 3), j = test.i % 3;
+    test.t += dt; const k = test.leg, j = test.i % 3;
     qs[k] = [...qs[k]]; qs[k][j] += 0.35 * Math.sin(2 * Math.PI * test.t / 0.7);
-    if (test.t >= 1.4) test = null;
+    if (test.t >= 1.4) { highlight(test.leg, false); test = null; }
   }
 
   qs.forEach((q, i) => { const L = legs[i]; L.coxa.rotation.z = q[0]; L.femur.rotation.y = -q[1]; L.tibia.rotation.y = Math.PI / 2 - q[2]; });
@@ -511,7 +571,7 @@ function update(dt, now) {
   shadow.scale.setScalar(0.55 * Math.hypot(home[1][0], home[1][1]) * (1 - Math.min(0.35, b.h / 500)));
   follow();
 
-  angles = servoAngles(qs, cal);
+  angles = servoAngles(qs, cal, order());
   if (angles.clipped) allOk = false;
   angles.forEach((a, i) => { const t = String(a); if (cells[i].textContent !== t) cells[i].textContent = t; });
   stream(now);
