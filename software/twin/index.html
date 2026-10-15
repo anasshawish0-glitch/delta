@@ -132,7 +132,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { makeRobot, ARM } from './kin.js';
 import { statusKitty, toNum, railPattern, kittyTile, kittyHead, markerShape, theme } from './kitty.js';
-import { libraBackdrop } from './libra.js';
 
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const desc = await (await fetch('robot.json')).json();
@@ -335,7 +334,7 @@ canvas.addEventListener('pointerup', e => {
 
 // ---------- colours from the page tokens ----------
 function paint() {
-  scene.background = backdrop ? null : new THREE.Color(css('--viewport'));
+  scene.background = new THREE.Color(css('--viewport'));
   tableMat.map = kittyTile(THREE, css('--table'), css('--grid'), 9, 7.5); tableMat.needsUpdate = true;
   sheet.material.color.set(css('--paper')); ringMat.color.set(css('--pink')); trayMat.color.set(css('--pink-soft'));
   setGhost(goal, false);
@@ -358,7 +357,6 @@ function renderInset(el, cam) {
   const r = el.getBoundingClientRect(), c = canvas.getBoundingClientRect();
   const x = r.left - c.left, y = c.bottom - r.bottom;
   renderer.setScissor(x, y, r.width, r.height); renderer.setViewport(x, y, r.width, r.height);
-  if (backdrop) { renderer.setClearColor(css('--viewport'), 1); renderer.clear(); }
   const gv = ghost.nodes.base_link.visible;
   gizmo.visible = false; marker.visible = false; ghost.nodes.base_link.visible = false;
   renderer.render(scene, cam);
@@ -370,19 +368,12 @@ function resize() {
   renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(canvas);
-// the Libra look draws its burning world first, then the robot on top
-const backdrop = theme === 'libra' ? libraBackdrop(THREE, { horizon: 0.36, side: -0.6 }) : null;   // fireball in the open sky left of the arm
-if (backdrop) renderer.autoClear = false;
-let lastT = performance.now();
-function frame(now = performance.now()) {
-  const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000)); lastT = now;
+function frame() {
   orbit.update();
   // the ghost only shows up when it differs from the real arm
   ghost.nodes.base_link.visible = JOINTS.some(n => Math.abs(goal[n] - cur[n]) > 0.01);
   const w = canvas.clientWidth, h = canvas.clientHeight;
-  renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h);
-  if (backdrop) { renderer.setClearColor(0x000000, 1); renderer.clear(); backdrop.render(renderer, camera, dt); renderer.clearDepth(); }
-  renderer.render(scene, camera);
+  renderer.setScissorTest(false); renderer.setViewport(0, 0, w, h); renderer.render(scene, camera);
   renderer.setScissorTest(true);
   renderInset($('inset-top'), topCam);
   placeWristCam(); renderInset($('inset-wrist'), wristCam);

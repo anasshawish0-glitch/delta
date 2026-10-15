@@ -194,7 +194,6 @@ setTimeout(() => { const l = document.getElementById('loading'); if (l && !l.hid
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { statusKitty, toNum, railPattern, kittyTile, ramHorns, theme } from './kitty.js';
-import { libraBackdrop } from './libra.js';
 import { JOINTS, LAYOUTS, LEG_ORDERS, KALEM, DEFAULT_DIMS, legNames, legMounts, homeFeet, legIK, toBody, servoAngles, sitSpread, calibrateFromStand, makeGait } from './hexapod.js';
 
 const $ = id => document.getElementById(id);
@@ -226,8 +225,8 @@ const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 const scene = new THREE.Scene();
-scene.background = theme === 'libra' ? null : new THREE.Color(css('--viewport'));
-if (theme !== 'libra') scene.fog = new THREE.Fog(css('--viewport'), 1.8, 5.5);
+scene.background = new THREE.Color(css('--viewport'));
+scene.fog = new THREE.Fog(css('--viewport'), 1.8, 5.5);
 const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 20);
 camera.position.set(0.98, 0.58, 0.36);
 const orbit = new OrbitControls(camera, canvas);
@@ -239,19 +238,7 @@ const rim = new THREE.DirectionalLight(theme === 'libra' ? 0xffc870 : 0xff8fc0, 
 // robot world in millimetres with Z up
 const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; root.scale.setScalar(0.001); scene.add(root);
 const floorMat = new THREE.MeshStandardMaterial({ roughness: 0.95, map: kittyTile(THREE, css('--table'), css('--grid'), 40, 40) });
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), floorMat);
-root.add(floor);
-// Libra: the floor fades out a little way behind the robot, so the burning world shows beyond it
-const floorFade = { near: { value: 1 }, far: { value: 2 } };
-if (theme === 'libra') {
-  floorMat.transparent = true; floor.renderOrder = -1;
-  floorMat.onBeforeCompile = sh => {
-    sh.uniforms.fadeNear = floorFade.near; sh.uniforms.fadeFar = floorFade.far;
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vDepth;').replace('#include <project_vertex>', '#include <project_vertex>\nvDepth = -mvPosition.z;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vDepth; uniform float fadeNear, fadeFar;')
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.a *= 1.0 - smoothstep(fadeNear, fadeFar, vDepth);');
-  };
-}
+root.add(new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), floorMat));
 const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false }));
 root.add(shadow);
 
@@ -637,17 +624,9 @@ function follow() {
 function resize() { const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(canvas);
 let last = performance.now();
-// the Libra look draws its burning world first, then the robot on top
-const backdrop = theme === 'libra' ? libraBackdrop(THREE, { horizon: 0.32, side: -0.6 }) : null;
-if (backdrop) renderer.autoClear = false;
 function frame(now) {
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
-  update(dt, now); orbit.update();
-  if (backdrop) {
-    const d = camera.position.distanceTo(orbit.target); floorFade.near.value = d + 0.1; floorFade.far.value = d + 0.6;
-    renderer.clear(); backdrop.render(renderer, camera, dt); renderer.clearDepth();
-  }
-  renderer.render(scene, camera);
+  update(dt, now); orbit.update(); renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 build(); bodyH = sitH; showSliders(); showCal(); updateHeart(); resize();
