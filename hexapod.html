@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitty Hexapod</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 90%27%3E%3Cpath fill=%27%23ff5fa2%27 d=%27M50 86C20 64 2 46 2 26C2 12 13 2 27 2C37 2 45 8 50 16C55 8 63 2 73 2C87 2 98 12 98 26C98 46 80 64 50 86Z%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Nunito:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="kitty.css">
+<style>
+/* Hexapod page only: connection light, joystick, calibration panel and servo readout. */
+.conn { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: .86rem; }
+.conn .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+.conn.on .dot { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.conn.wait .dot { background: var(--pink-soft); animation: blinkdot 1s steps(2) infinite; }
+.conn.err .dot { background: var(--warn); }
+@keyframes blinkdot { 50% { opacity: .2; } }
+.turn { width: 48px; height: 48px; padding: 0; border-radius: 50%; font-size: 1.35rem; line-height: 1; justify-self: center; touch-action: none; user-select: none; }
+.joy { position: relative; width: 156px; height: 156px; justify-self: center; border-radius: 50%; border: 1px solid var(--pink); background: radial-gradient(circle, color-mix(in srgb, var(--pink) 16%, transparent), transparent 68%), var(--bg); touch-action: none; cursor: grab; }
+.joy::before, .joy::after { content: ""; position: absolute; background: var(--line); }
+.joy::before { left: 50%; top: 14px; bottom: 14px; width: 1px; }
+.joy::after { top: 50%; left: 14px; right: 14px; height: 1px; }
+.joy:active { cursor: grabbing; }
+.knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 49px; margin: -24px 0 0 -27px; pointer-events: none; z-index: 1; transition: transform .12s ease-out; }
+.joy.held .knob { transition: none; }
+.knob svg { width: 100%; height: 100%; fill: var(--pink); filter: drop-shadow(0 3px 10px color-mix(in srgb, var(--pink) 50%, transparent)); }
+details { display: grid; gap: 10px; }
+details[open] > summary { margin-bottom: 10px; }
+summary { font-family: var(--head); font-size: .95rem; font-weight: 600; color: var(--pink-soft); cursor: pointer; }
+.cal { display: grid; gap: 10px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: .84rem; }
+.check input { accent-color: var(--pink); width: 16px; height: 16px; }
+.servo-grid { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: 3px 10px; font-family: var(--mono); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.servo-grid span { text-align: end; }
+.servo-grid .hd { color: var(--muted); font-family: var(--body); font-size: .72rem; }
+.servo-grid b { font-family: var(--body); font-weight: 700; text-align: start; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+a.pill { text-decoration: none; text-align: center; }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="kitty" viewBox="0 0 120 100">
+      <g style="stroke: var(--kitty-line)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M18 46Q12 12 22 8Q31 6 48 26Z" fill="#fffafc"/>
+        <path d="M102 46Q108 12 98 8Q89 6 72 26Z" fill="#fffafc"/>
+        <ellipse cx="60" cy="58" rx="50" ry="36" fill="#fffafc"/>
+        <path d="M2 55L24 60M0 66L23 67M3 78L24 73M118 55L96 60M120 66L97 67M117 78L96 73" fill="none" stroke-width="3"/>
+        <ellipse cx="40" cy="60" rx="4.5" ry="6.5" style="fill: var(--kitty-line)" stroke="none"/>
+        <ellipse cx="80" cy="60" rx="4.5" ry="6.5" style="fill: var(--kitty-line)" stroke="none"/>
+        <ellipse cx="60" cy="69" rx="5.5" ry="4" fill="#f5c542" stroke-width="2"/>
+        <g>
+          <ellipse cx="77" cy="18" rx="12" ry="9" transform="rotate(-25 77 18)" style="fill: var(--bow, #ff5fa2)"/>
+          <ellipse cx="101" cy="22" rx="12" ry="9" transform="rotate(25 101 22)" style="fill: var(--bow, #ff5fa2)"/>
+          <circle cx="89" cy="20" r="6" style="fill: var(--bow, #ff5fa2)"/>
+        </g>
+      </g>
+    </symbol>
+    <symbol id="heart" viewBox="0 0 100 90">
+      <path d="M50 86C20 64 2 46 2 26C2 12 13 2 27 2C37 2 45 8 50 16C55 8 63 2 73 2C87 2 98 12 98 26C98 46 80 64 50 86Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside class="rail" id="rail">
+    <div class="brand">
+      <svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
+      <div><h1>Kitty Hexapod</h1><p>18 servos · Arduino + PCA9685 · USB</p></div>
+    </div>
+    <nav class="tabs" aria-label="Robots"><a href="./">Arm</a><a href="hexapod.html" aria-current="page">Hexapod</a></nav>
+
+    <section aria-labelledby="c-h">
+      <h2 id="c-h">Robot connection</h2>
+      <div class="conn" id="conn" role="status"><span class="dot"></span><span id="connText">Simulation only</span></div>
+      <div class="row2">
+        <button class="pill solid" id="connect">Connect USB</button>
+        <button class="pill stop" id="relax" disabled>Relax motors</button>
+      </div>
+      <p class="note" id="connNote">Plug the Arduino in with USB, press Connect and pick its port. Put the robot on a box the first time.</p>
+    </section>
+
+    <section aria-labelledby="w-h">
+      <h2 id="w-h">Walk</h2>
+      <div class="run-row">
+        <button class="pill turn" id="turnL" aria-label="Turn left (hold)">↺</button>
+        <button class="heart" id="stand" aria-label="Stand up"><svg><use href="#heart"/></svg><span id="standLabel">Stand</span></button>
+        <button class="pill turn" id="turnR" aria-label="Turn right (hold)">↻</button>
+      </div>
+      <div class="joy" id="joy" role="img" aria-label="Walk joystick: drag the heart, or use the W A S D keys"><div class="knob" id="knob"><svg><use href="#heart"/></svg></div></div>
+      <div class="reach ok" id="reach">All legs can reach</div>
+      <p class="note">Drag the heart to walk. Keyboard: W A S D walk, Q E or ← → turn.</p>
+    </section>
+
+    <section aria-labelledby="t-h">
+      <h2 id="t-h">Tricks</h2>
+      <div class="pills">
+        <button class="pill" id="wave" disabled>Wave hello</button>
+        <button class="pill" id="dance" disabled>Dance</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="b-h">
+      <h2 id="b-h">Body</h2>
+      <div class="joint"><span>Body height</span><output id="o-height"></output><input type="range" id="s-height" step="1" aria-label="Body height"></div>
+      <div class="joint"><span>Speed</span><output id="o-speed"></output><input type="range" id="s-speed" step="1" aria-label="Speed"></div>
+      <div class="joint"><span>Step height</span><output id="o-lift"></output><input type="range" id="s-lift" step="1" aria-label="Step height"></div>
+    </section>
+
+    <section aria-labelledby="d-h">
+      <h2 id="d-h">Leg sizes (mm, joint to joint)</h2>
+      <div class="row3">
+        <label class="field">Coxa<input id="d-coxa" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
+        <label class="field">Femur<input id="d-femur" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
+        <label class="field">Tibia<input id="d-tibia" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
+      </div>
+      <div class="row2">
+        <label class="field">Front to back legs<input id="d-length" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
+        <label class="field">Middle legs apart<input id="d-width" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
+      </div>
+    </section>
+
+    <details>
+      <summary>Servo calibration</summary>
+      <div class="cal">
+        <button class="pill" id="center">All servos to 90°</button>
+        <p class="note">Use this to fit the servo horns: coxa straight out, femur level, tibia straight down.</p>
+        <label class="field">Servo<select id="servo"></select></label>
+        <div class="joint"><span>Trim</span><output id="o-trim"></output><input type="range" id="trim" min="-30" max="30" step="1" aria-label="Trim"></div>
+        <label class="check"><input type="checkbox" id="invert"> Reverse direction</label>
+        <button class="pill" id="test">Wiggle this servo</button>
+        <p class="note">Wiggle: the leg in the picture and the real one should move the same way. If not, tick Reverse.</p>
+        <h2>Servo output (°)</h2>
+        <div class="servo-grid" id="grid"><span></span><span class="hd">coxa</span><span class="hd">femur</span><span class="hd">tibia</span></div>
+        <a class="pill" href="hexapod_serial/hexapod_serial.ino" download>Download Arduino sketch</a>
+      </div>
+    </details>
+
+    <p class="note">The Arduino sketch expects two PCA9685 boards: 0x40 for the right legs and 0x41 for the left. If yours are wired differently, edit the CHANNEL list at the top of the sketch.</p>
+    <p class="note">Servos need their own 5–6 V supply with a few amps on the PCA9685 V+ terminal, not the Arduino 5 V pin. Settings are saved in this browser.</p>
+  </aside>
+
+  <div class="view">
+    <canvas id="scene" aria-label="3D view of the hexapod"></canvas>
+    <svg class="deco peek" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
+    <svg class="deco k2" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--bow-red)"><use href="#kitty"/></svg>
+    <svg class="deco k3" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--pink-soft)"><use href="#kitty"/></svg>
+    <svg class="deco k4" viewBox="0 0 120 100" aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
+    <svg class="deco h1" viewBox="0 0 100 90" aria-hidden="true" style="fill: var(--pink)"><use href="#heart"/></svg>
+    <svg class="deco h2" viewBox="0 0 100 90" aria-hidden="true" style="fill: var(--pink-soft)"><use href="#heart"/></svg>
+    <div class="hint">Drag the view to look around. The camera follows the robot.</div>
+    <div class="status-kitty" id="kittyStatus"></div>
+    <div class="loading" id="loading">Loading hexapod…</div>
+  </div>
+</div>
+
+<script>
+setTimeout(() => { const l = document.getElementById('loading'); if (l && !l.hidden) l.textContent = "Couldn't load the 3D view. Refresh the page."; }, 20000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { statusKitty, toNum, railPattern, kittyTile, kittyHead } from './kitty.js';
+import { LEGS, LEG_NAMES, JOINTS, DEFAULT_DIMS, legMounts, homeFeet, legIK, toBody, servoAngles, makeGait } from './hexapod.js';
+
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+railPattern($('rail'), css('--pink'));
+const kitty = statusKitty($('kittyStatus'));
+
+// ---------- settings, kept in this browser ----------
+const KEY = 'kitty-hexapod-v1';
+const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
+const dims = { ...DEFAULT_DIMS, ...saved.dims };
+const ui = { height: 90, speed: 60, lift: 30, ...saved.ui };
+const cal = {
+  trim: Array.isArray(saved.trim) && saved.trim.length === 18 ? saved.trim : new Array(18).fill(0),
+  invert: Array.isArray(saved.invert) && saved.invert.length === 18 ? saved.invert : new Array(18).fill(false),
+};
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ dims, ui, trim: cal.trim, invert: cal.invert })); } catch { /* private mode: settings last until reload */ } };
+
+// ---------- scene ----------
+const canvas = $('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(css('--viewport'));
+scene.fog = new THREE.Fog(css('--viewport'), 1.4, 4.5);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 20);
+camera.position.set(0.72, 0.42, 0.26);
+const orbit = new OrbitControls(camera, canvas);
+orbit.target.set(0, 0.05, 0); orbit.enableDamping = true; orbit.maxPolarAngle = Math.PI * 0.48; orbit.minDistance = 0.25; orbit.maxDistance = 3;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x4a2a3a, 1.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(0.6, 1.2, 0.4); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffc2dc, 0.6); fill.position.set(-0.6, 0.4, -0.5); scene.add(fill);
+
+// robot world in millimetres with Z up
+const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; root.scale.setScalar(0.001); scene.add(root);
+const floorMat = new THREE.MeshStandardMaterial({ roughness: 0.95, map: kittyTile(THREE, css('--table'), css('--grid'), 40, 40) });
+root.add(new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), floorMat));
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
+root.add(shadow);
+
+const white = new THREE.MeshStandardMaterial({ color: 0xf7f1f4, roughness: 0.55 });
+const dark = new THREE.MeshStandardMaterial({ color: 0x241f27, roughness: 0.5 });
+const pink = new THREE.MeshStandardMaterial({ color: css('--pink'), roughness: 0.45 });
+const box = (sx, sy, sz, mat, [x, y, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat); m.position.set(x, y, z); return m; };
+
+const body = new THREE.Group(); root.add(body);
+const legs = [];
+let mounts, home;
+function build() {
+  mounts = legMounts(dims); home = homeFeet(dims, dims.femur * 0.95);
+  body.clear(); legs.length = 0;
+  const rx = dims.length / 2 + 28, ry = dims.width / 2 + 6;
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 48), white); plate.rotation.x = Math.PI / 2; plate.scale.set(rx, 12, ry); plate.position.z = 4; body.add(plate);
+  const belly = new THREE.Mesh(plate.geometry, dark); belly.rotation.x = Math.PI / 2; belly.scale.set(rx * 0.82, 14, ry * 0.82); belly.position.z = -9; body.add(belly);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.03, 8, 72), pink); rim.scale.set(rx, ry, 110); rim.position.z = 10; body.add(rim);
+  const head = kittyHead(THREE, 92, css('--pink')); head.position.set(12, 0, 10); body.add(head);
+  for (const m of mounts) {
+    const mount = new THREE.Group(); mount.position.set(m.x, m.y, 0); mount.rotation.z = m.a; body.add(mount);
+    mount.add(box(30, 22, 34, dark, [2, 0, -4]));                                   // coxa servo
+    const coxa = new THREE.Group(); mount.add(coxa);
+    coxa.add(box(dims.coxa, 20, 8, white, [dims.coxa / 2, 0, 9]));
+    coxa.add(box(26, 34, 22, dark, [dims.coxa, 0, 0]));                             // femur servo
+    const femur = new THREE.Group(); femur.position.x = dims.coxa; coxa.add(femur);
+    femur.add(box(dims.femur, 18, 9, white, [dims.femur / 2, 0, 0]));
+    femur.add(box(24, 30, 20, dark, [dims.femur, 0, 0]));                           // tibia servo
+    const tibia = new THREE.Group(); tibia.position.x = dims.femur; femur.add(tibia);
+    const shin = new THREE.Mesh(new THREE.CylinderGeometry(4, 8, dims.tibia, 16), white); shin.rotation.z = -Math.PI / 2; shin.position.x = dims.tibia / 2; tibia.add(shin);
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(7, 16, 12), pink); foot.position.x = dims.tibia; tibia.add(foot);
+    legs.push({ coxa, femur, tibia });
+  }
+}
+build();
+
+// ---------- motion state ----------
+const SIT_H = 30;
+const gait = makeGait();
+const cmd = { vx: 0, vy: 0, wz: 0 }, STOP = { vx: 0, vy: 0, wz: 0 };
+let standing = false, centerMode = false, bodyH = SIT_H, trick = null, test = null, angles = new Array(18).fill(90);
+const joy = { x: 0, y: 0 }, keys = new Set(); let turnHold = 0;
+
+function drive() {
+  let fx = -joy.y, fy = -joy.x, w = turnHold;
+  if (keys.has('KeyW') || keys.has('ArrowUp')) fx += 1;
+  if (keys.has('KeyS') || keys.has('ArrowDown')) fx -= 1;
+  if (keys.has('KeyA')) fy += 1;
+  if (keys.has('KeyD')) fy -= 1;
+  if (keys.has('KeyQ') || keys.has('ArrowLeft')) w += 1;
+  if (keys.has('KeyE') || keys.has('ArrowRight')) w -= 1;
+  const l = Math.hypot(fx, fy); if (l > 1) { fx /= l; fy /= l; }
+  w = Math.max(-1, Math.min(1, w));
+  const k = ui.speed / 100;
+  return { vx: 130 * k * fx, vy: 100 * k * fy, wz: 0.7 * k * w };
+}
+
+// body pose for the tricks; the wave lifts the right front foot and shifts the body away from it
+function trickPose(dt, rising) {
+  const b = { h: bodyH, sx: 0, sy: 0, roll: 0, pitch: 0, yaw: 0 };
+  if (!trick) return { b, wave: null };
+  if (trick.wait) { if (gait.active || rising) return { b, wave: null }; trick.wait = false; }
+  trick.t += dt;
+  const t = trick.t, env = Math.max(0, Math.min(1, t / 0.6, (trick.dur - t) / 0.6)), TAU = 2 * Math.PI;
+  let wave = null;
+  if (trick.name === 'dance') {
+    b.roll = 0.12 * Math.sin(TAU * 0.8 * t) * env; b.pitch = 0.09 * Math.cos(TAU * 0.8 * t) * env;
+    b.yaw = 0.15 * Math.sin(TAU * 0.4 * t) * env; b.h += 12 * Math.sin(TAU * 1.6 * t) * env; b.sx = 10 * Math.sin(TAU * 0.8 * t) * env;
+  } else {
+    b.sx = -14 * env; b.sy = 16 * env;
+    wave = [home[0][0] + 30 * env, home[0][1] + (-5 + 28 * Math.sin(TAU * 1.3 * Math.max(0, t - 0.6))) * env, 75 * env];
+  }
+  if (t >= trick.dur) { trick = null; kitty.cheer(); }
+  return { b, wave };
+}
+
+// ---------- USB serial to the Arduino (Chrome / Edge on a computer) ----------
+const hasSerial = 'serial' in navigator;
+const enc = new TextEncoder();
+let port = null, writer = null, reader = null, piped = null, ready = false, relaxed = false, writing = false, sentAt = 0, lastLine = '', hello = 0;
+function setConn(state, text) {
+  $('conn').className = 'conn ' + state; $('connText').textContent = text;
+  $('connect').textContent = port ? 'Disconnect' : 'Connect USB';
+  $('relax').disabled = !ready;
+}
+if (!hasSerial) {
+  $('connect').disabled = true;
+  $('connNote').textContent = "This browser can't talk to USB devices. Open this page in Chrome or Edge on a computer to drive the real robot.";
+}
+$('connect').onclick = () => (port ? disconnect('Simulation only', 'off') : connect());
+async function connect() {
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200 });
+  } catch (e) { port = null; setConn('err', e && e.name === 'NotFoundError' ? 'No port picked' : "Couldn't open the port"); return; }
+  writer = port.writable.getWriter();
+  const dec = new TextDecoderStream(); piped = port.readable.pipeTo(dec.writable).catch(() => {}); reader = dec.readable.getReader();
+  setConn('wait', 'Waiting for the Arduino…');
+  listen(reader);
+  // an Uno restarts when the port opens; ask again if it stays quiet
+  hello = setTimeout(() => { if (port && !ready) writer.write(enc.encode('?\n')).catch(() => {}); hello = setTimeout(() => { if (port && !ready) setConn('err', 'No answer. Is hexapod_serial.ino uploaded?'); }, 2500); }, 2500);
+}
+async function listen(r) {
+  let buf = '';
+  try {
+    for (;;) {
+      const { value, done } = await r.read(); if (done) break;
+      buf += value; let k;
+      while ((k = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, k).trim(); buf = buf.slice(k + 1);
+        if (line.startsWith('HEXAPOD') && !ready) { ready = true; clearTimeout(hello); setConn('on', 'Connected to the hexapod'); kitty.cheer(); }
+      }
+    }
+  } catch { /* port closed */ }
+}
+async function disconnect(text, state) {
+  const p = port; port = null; ready = false; clearTimeout(hello);
+  try { writer.releaseLock(); } catch {}
+  try { await reader.cancel(); await piped; } catch {}
+  try { await p.close(); } catch {}
+  writer = reader = null; setConn(state, text);
+}
+if (hasSerial) navigator.serial.addEventListener('disconnect', e => { if (port && e.target === port) disconnect('USB cable unplugged', 'err'); });
+$('relax').onclick = () => { if (!ready) return; relaxed = true; writer.write(enc.encode('R\n')).catch(() => {}); setConn('on', 'Motors relaxed. Press Stand or Sit to power them.'); };
+function stream(now) {
+  if (!ready || relaxed || writing || now - sentAt < 25) return;
+  const line = 'S' + angles.join(',');
+  if (line === lastLine && now - sentAt < 500) return;
+  writing = true; sentAt = now; lastLine = line;
+  writer.write(enc.encode(line + '\n')).then(() => { writing = false; }, () => { writing = false; if (port) disconnect('Connection lost', 'err'); });
+}
+const wakeMotors = () => { if (relaxed) { relaxed = false; if (ready) setConn('on', 'Connected to the hexapod'); } };
+
+// ---------- controls ----------
+function updateHeart() {
+  $('standLabel').textContent = standing ? 'Sit' : 'Stand';
+  $('stand').setAttribute('aria-label', standing ? 'Sit down' : 'Stand up');
+}
+$('stand').onclick = () => { if (centerMode) { centerMode = false; standing = true; } else standing = !standing; trick = null; wakeMotors(); updateHeart(); };
+$('wave').onclick = () => { if (standing && !trick) { trick = { name: 'wave', t: 0, dur: 3.6, wait: true }; wakeMotors(); } };
+$('dance').onclick = () => { if (standing && !trick) { trick = { name: 'dance', t: 0, dur: 6.4, wait: true }; wakeMotors(); } };
+$('center').onclick = () => { centerMode = true; standing = false; trick = null; wakeMotors(); updateHeart(); };
+
+const joyEl = $('joy'), knob = $('knob');
+function moveJoy(e) {
+  const r = joyEl.getBoundingClientRect(), R = r.width / 2 - 28;
+  let x = e.clientX - r.left - r.width / 2, y = e.clientY - r.top - r.height / 2;
+  const l = Math.hypot(x, y); if (l > R) { x *= R / l; y *= R / l; }
+  joy.x = x / R; joy.y = y / R; knob.style.transform = `translate(${x}px, ${y}px)`;
+}
+const endJoy = () => { joyEl.classList.remove('held'); joy.x = joy.y = 0; knob.style.transform = ''; };
+joyEl.addEventListener('pointerdown', e => { joyEl.setPointerCapture(e.pointerId); joyEl.classList.add('held'); wakeMotors(); moveJoy(e); });
+joyEl.addEventListener('pointermove', e => { if (joyEl.classList.contains('held')) moveJoy(e); });
+joyEl.addEventListener('pointerup', endJoy); joyEl.addEventListener('pointercancel', endJoy);
+for (const [id, w] of [['turnL', 1], ['turnR', -1]]) {
+  const b = $(id), on = () => { turnHold = w; wakeMotors(); }, off = () => { turnHold = 0; };
+  b.addEventListener('pointerdown', e => { b.setPointerCapture(e.pointerId); on(); });
+  b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off);
+  b.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); on(); } });
+  b.addEventListener('keyup', off); b.addEventListener('blur', off);
+}
+const DRIVE_KEYS = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+addEventListener('keydown', e => {
+  if (!DRIVE_KEYS.includes(e.code) || e.target.closest?.('input, select, textarea, .turn')) return;
+  keys.add(e.code); wakeMotors(); if (e.code.startsWith('Arrow')) e.preventDefault();
+});
+addEventListener('keyup', e => keys.delete(e.code));
+addEventListener('blur', () => keys.clear());
+
+const SLIDERS = { height: [50, 140, ' mm'], speed: [20, 100, '%'], lift: [15, 50, ' mm'] };
+for (const [k, [lo, hi, unit]] of Object.entries(SLIDERS)) {
+  const s = $('s-' + k), o = $('o-' + k);
+  s.min = lo; s.max = hi; s.value = ui[k]; o.textContent = ui[k] + unit;
+  s.addEventListener('input', () => { ui[k] = +s.value; o.textContent = ui[k] + unit; save(); });
+}
+for (const k of ['coxa', 'femur', 'tibia', 'length', 'width']) {
+  const el = $('d-' + k); el.value = dims[k];
+  el.addEventListener('change', () => { const v = toNum(el.value); if (v >= 10 && v <= 400) { dims[k] = v; save(); build(); } el.value = dims[k]; });
+}
+
+const sel = $('servo');
+LEGS.forEach((_, k) => JOINTS.forEach((j, n) => sel.add(new Option(`${LEG_NAMES[k]} · ${j}`, k * 3 + n))));
+const signed = v => `${v > 0 ? '+' : ''}${v}°`;
+const showCal = () => { const i = +sel.value; $('trim').value = cal.trim[i]; $('o-trim').textContent = signed(cal.trim[i]); $('invert').checked = cal.invert[i]; };
+sel.onchange = showCal; showCal();
+$('trim').addEventListener('input', () => { const i = +sel.value; cal.trim[i] = +$('trim').value; $('o-trim').textContent = signed(cal.trim[i]); save(); });
+$('invert').onchange = () => { cal.invert[+sel.value] = $('invert').checked; save(); };
+$('test').onclick = () => { test = { i: +sel.value, t: 0 }; wakeMotors(); };
+
+const cells = [];
+LEGS.forEach((l, k) => {
+  const name = document.createElement('b'); name.textContent = l; name.title = LEG_NAMES[k]; $('grid').append(name);
+  for (let j = 0; j < 3; j++) { const c = document.createElement('span'); $('grid').append(c); cells.push(c); }
+});
+
+// ---------- every frame ----------
+let allOk = true;
+function update(dt, now) {
+  const targetH = centerMode ? dims.tibia : standing ? ui.height : SIT_H;
+  if (centerMode) bodyH = targetH; else bodyH += Math.sign(targetH - bodyH) * Math.min(Math.abs(targetH - bodyH), 70 * dt);
+  const rising = Math.abs(targetH - bodyH) > 0.5;
+  const want = !standing || trick || centerMode || rising ? STOP : drive();
+  for (const k of ['vx', 'vy', 'wz']) cmd[k] += (want[k] - cmd[k]) * Math.min(1, dt * 6);
+  if (want === STOP && Math.hypot(cmd.vx, cmd.vy) < 3 && Math.abs(cmd.wz) < 0.03) cmd.vx = cmd.vy = cmd.wz = 0;
+  gait.step(dt, cmd, home, { period: 0.9, lift: ui.lift });
+  const { b, wave } = trickPose(dt, rising);
+  const feet = gait.feet(home); if (wave) feet[0] = wave;
+
+  allOk = true;
+  const qs = centerMode ? mounts.map(() => [0, 0, 0]) : mounts.map((m, i) => { const r = legIK(dims, m, toBody(feet[i], b)); if (!r.ok) allOk = false; return r.q; });
+  if (test) {
+    test.t += dt; const k = Math.floor(test.i / 3), j = test.i % 3;
+    qs[k] = [...qs[k]]; qs[k][j] += 0.35 * Math.sin(2 * Math.PI * test.t / 0.7);
+    if (test.t >= 1.4) test = null;
+  }
+
+  qs.forEach((q, i) => { const L = legs[i]; L.coxa.rotation.z = q[0]; L.femur.rotation.y = -q[1]; L.tibia.rotation.y = Math.PI / 2 - q[2]; });
+  const P = gait.pose, c = Math.cos(P.yaw), s = Math.sin(P.yaw);
+  body.position.set(P.x + c * b.sx - s * b.sy, P.y + s * b.sx + c * b.sy, b.h);
+  body.rotation.set(b.roll, b.pitch, P.yaw + b.yaw, 'ZYX');
+  shadow.position.set(body.position.x, body.position.y, 0.5);
+  shadow.scale.setScalar((dims.length / 2 + 70) * (1 - Math.min(0.4, b.h / 400)));
+  follow();
+
+  angles = servoAngles(qs, cal);
+  angles.forEach((a, i) => { const t = String(a); if (cells[i].textContent !== t) cells[i].textContent = t; });
+  stream(now);
+
+  kitty.set(gait.active || trick || rising || test ? 'busy' : allOk ? 'idle' : 'sad');
+  const noTrick = !standing || !!trick;
+  if ($('wave').disabled !== noTrick) $('wave').disabled = $('dance').disabled = noTrick;
+  const reach = $('reach'), msg = allOk ? 'All legs can reach' : "A leg can't reach: lower the body or the step height";
+  if (reach.textContent !== msg) { reach.textContent = msg; reach.className = 'reach ' + (allOk ? 'ok' : 'no'); }
+}
+
+// the camera slides along with the robot
+const followAt = new THREE.Vector3();
+function follow() {
+  const x = body.position.x / 1000, z = -body.position.y / 1000, dx = x - followAt.x, dz = z - followAt.z;
+  if (!dx && !dz) return;
+  camera.position.x += dx; camera.position.z += dz; orbit.target.x += dx; orbit.target.z += dz; followAt.set(x, 0, z);
+}
+
+function resize() { const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(canvas);
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+  update(dt, now); orbit.update(); renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+updateHeart(); resize(); $('loading').hidden = true; requestAnimationFrame(frame);
+</script>
+</body>
+</html>
