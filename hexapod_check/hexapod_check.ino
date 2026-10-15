@@ -12,10 +12,9 @@
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
-// same values as hexapod_serial.ino (and your old code)
+// same values as hexapod_serial.ino and the robot's own code (PULSE_MIN / PULSE_MAX, default oscillator)
 const uint16_t SERVOMIN = 150;
 const uint16_t SERVOMAX = 600;
-const long OSC_FREQ = 27000000;
 
 Adafruit_PWMServoDriver board[2] = { Adafruit_PWMServoDriver(0x40), Adafruit_PWMServoDriver(0x41) };
 
@@ -61,7 +60,6 @@ void setup() {
   Wire.begin();
   for (Adafruit_PWMServoDriver &b : board) {
     b.begin();
-    b.setOscillatorFrequency(OSC_FREQ);
     b.setPWMFreq(50);
   }
   allOff();
