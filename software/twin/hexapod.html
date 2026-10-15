@@ -154,6 +154,8 @@ a.pill { text-decoration: none; text-align: center; }
         <label class="check"><input type="checkbox" id="invert"> Reverse direction</label>
         <button class="pill" id="test">Wiggle this servo</button>
         <p class="note">Wiggle turns the leg pink in the picture. The same leg on the robot should move the same way. Wrong leg: change Leg numbers. Wrong way: tick Reverse.</p>
+        <button class="pill" id="flipCoxa">Walks backwards? Reverse all 6 coxa</button>
+        <p class="note">Use this if the robot walks backwards, turns the wrong way or its legs push against each other. The stand pose stays the same.</p>
         <h2>Servo output (°)</h2>
         <div class="servo-grid" id="grid"><span></span><span class="hd">coxa</span><span class="hd">femur</span><span class="hd">tibia</span></div>
         <a class="pill" href="hexapod_serial/hexapod_serial.ino" download>Download Arduino sketch</a>
@@ -546,6 +548,7 @@ function calibrate(fromTable) {
   $('calibNote').className = 'note' + (odd.length ? ' warn' : '');
 }
 $('calib').onclick = () => calibrate(true);
+$('flipCoxa').onclick = () => { for (let n = 0; n < 6; n++) cal.invert[n * 3] = !cal.invert[n * 3]; calibrate(false); };
 
 const cells = [], codeCells = [];  // servo output table, robot leg order
 for (let leg = 0; leg < 6; leg++) {
