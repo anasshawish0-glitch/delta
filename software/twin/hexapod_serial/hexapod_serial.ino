@@ -21,11 +21,11 @@ const float MAX_STEP = 4;  // degrees per 20 ms (200°/s); an MG996R tops out ne
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
-// Angle -> PCA9685 ticks. Use the same three numbers as your hexapod_walk_final.ino, so that an
-// angle means the same horn position there and here (these are Adafruit's example values).
+// Angle -> PCA9685 ticks, the same as the robot's own code (PULSE_MIN 150, PULSE_MAX 600). Like
+// that code, the boards keep the library's default oscillator setting (no setOscillatorFrequency),
+// so an angle means the same horn position there and here.
 const uint16_t SERVOMIN = 150;   // ticks at 0°
 const uint16_t SERVOMAX = 600;   // ticks at 180°
-const long OSC_FREQ = 27000000;  // what your code passes to setOscillatorFrequency (library default 25000000)
 
 Adafruit_PWMServoDriver board[2] = { Adafruit_PWMServoDriver(0x40), Adafruit_PWMServoDriver(0x41) };
 
@@ -52,12 +52,11 @@ void startServos() {
   Wire.setClock(400000);
   for (Adafruit_PWMServoDriver &b : board) {
     b.begin();
-    b.setOscillatorFrequency(OSC_FREQ);
     b.setPWMFreq(50);
   }
 }
 void writeAngle(uint8_t i, float deg) {
-  uint16_t ticks = SERVOMIN + (uint16_t)(deg * (SERVOMAX - SERVOMIN) / 180 + 0.5);
+  uint16_t ticks = SERVOMIN + (uint16_t)(deg * (SERVOMAX - SERVOMIN) / 180);  // rounds down like map()
   board[MB[i / 3][i % 3] - 1].setPWM(MC[i / 3][i % 3], 0, ticks);
 }
 void relaxOne(uint8_t i) { board[MB[i / 3][i % 3] - 1].setPWM(MC[i / 3][i % 3], 0, 4096); }  // full off
