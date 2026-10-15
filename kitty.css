@@ -182,7 +182,10 @@ section { display: grid; gap: 10px; background: color-mix(in srgb, var(--panel) 
   --head: "Cinzel", "Nunito", Georgia, serif;
 }
 :root[data-theme="libra"] .brand h1 { letter-spacing: .02em; }
-:root[data-theme="libra"] .heart span { padding-bottom: 0; color: var(--pink); font-size: 1rem; letter-spacing: .08em; text-transform: uppercase; }
+:root[data-theme="libra"] .heart span { padding: 18px 0 0; color: #fff4c2; font-size: .95rem; letter-spacing: .08em; text-transform: uppercase; text-shadow: 0 0 3px #1a0d00, 0 0 6px #1a0d00, 0 0 12px #000; }
+:root[data-theme="libra"] .heart svg { filter: drop-shadow(0 0 10px rgba(255, 150, 0, .45)); }
+:root[data-theme="libra"] .heart:not(:disabled) svg { animation: lb-flame-beat 2.2s ease-in-out infinite; }
+@keyframes lb-flame-beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06) rotate(-2deg); } }
 :root[data-theme="libra"] .tabs a[aria-current="page"], :root[data-theme="libra"] .seg button[aria-pressed="true"], :root[data-theme="libra"] .pill.solid { color: #1a1206; }
 /* the goat's moods: calm, watching, furious when the robot can't reach, pleased, asleep */
 :root[data-theme="libra"] .status-kitty .sk-blush { fill: #f2b929; }

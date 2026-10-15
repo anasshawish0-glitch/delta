@@ -139,7 +139,7 @@ export function toNum(s) {
 export function railPattern(el, color) {
   const k = theme === 'libra'
     ? `<g fill='none' stroke='${color}' stroke-width='3' stroke-linejoin='round' stroke-linecap='round' opacity='0.08'><path d='${HORN_L}M${HORN_R.slice(1)}'/><path d='M38 72Q60 50 82 72Q60 94 38 72Z'/><path d='M50 72H70'/></g>`
-      + `<g transform='translate(150 10) scale(.9)' fill='none' stroke='${color}' stroke-width='3' stroke-linecap='round' opacity='0.06'><path d='M50 60a3 3 0 0 1 6 0a6 6 0 0 1 -12 0a9 9 0 0 1 18 0a12 12 0 0 1 -24 0a15 15 0 0 1 30 0a18 18 0 0 1 -36 0M46 44C40 32 50 22 46 6C60 18 64 32 60 44M34 62C22 56 20 44 16 32M66 64C80 60 84 48 88 34'/></g>`
+      + `<g transform='translate(150 10) scale(.9)' fill='none' stroke='${color}' stroke-width='3' stroke-linecap='round' opacity='0.06'><path d='M50 60a4 4 0 0 1 8 0a8 8 0 0 1 -16 0a12 12 0 0 1 24 0a16 16 0 0 1 -32 0a20 20 0 0 1 40 0M46 44C40 32 50 22 46 6C60 18 64 32 60 44M34 62C22 56 20 44 16 32M66 64C80 60 84 48 88 34'/></g>`
     : `<g fill='none' stroke='${color}' stroke-width='3' stroke-linejoin='round' stroke-linecap='round' opacity='0.09'><path d='M18 46Q12 12 22 8Q31 6 48 26M102 46Q108 12 98 8Q89 6 72 26'/><ellipse cx='60' cy='58' rx='50' ry='36'/><ellipse cx='89' cy='20' rx='16' ry='8'/></g>`;
   const tile = `<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 300 300'><g transform='translate(20 20)'>${k}</g><g transform='translate(170 170) scale(.8)'>${k}</g></svg>`;
   el.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(tile)}")`;

@@ -36,13 +36,13 @@
       <stop offset="0" stop-color="#fff3a0"/><stop offset=".45" stop-color="#ffc21a"/><stop offset="1" stop-color="#ff7a00"/>
     </linearGradient>
     <filter id="lb-glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      <feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <symbol id="frenzy" viewBox="0 0 100 100">
       <g filter="url(#lb-glow)">
         <path d="M46 44C40 32 50 22 46 6C60 18 64 32 60 44Z M34 62C22 56 20 44 16 32C28 38 34 46 38 54Z M66 64C80 60 84 48 88 34C92 48 84 64 70 70Z M36 74C26 76 20 70 16 62C26 66 32 66 38 66Z" fill="url(#lb-flame)"/>
-        <path d="M50 60a3 3 0 0 1 6 0a6 6 0 0 1 -12 0a9 9 0 0 1 18 0a12 12 0 0 1 -24 0a15 15 0 0 1 30 0a18 18 0 0 1 -36 0" fill="none" stroke="#ffb000" stroke-width="5" stroke-linecap="round"/>
-        <path d="M45 60Q50 56 55 60Q50 64 45 60Z" fill="#2a1600"/>
+        <path d="M50 60a4 4 0 0 1 8 0a8 8 0 0 1 -16 0a12 12 0 0 1 24 0a16 16 0 0 1 -32 0a20 20 0 0 1 40 0" fill="none" stroke="#ffb000" stroke-width="3.6" stroke-linecap="round"/>
+        <path d="M48 60Q53 56 58 60Q53 64 48 60Z" fill="#2a1600"/>
       </g>
     </symbol>`);
 
@@ -68,6 +68,8 @@
   // the frenzied flame, used lightly: one faint sigil among the decorations
   const k3 = document.querySelector('.deco.k3');
   if (k3) { k3.setAttribute('viewBox', '0 0 100 100'); k3.querySelector('use').setAttribute('href', '#frenzy'); k3.style.opacity = '.32'; }
+  // the main button (Run, Stand / Sit) is the flame spiral
+  document.querySelectorAll('.heart svg use').forEach(u => u.setAttribute('href', '#frenzy'));
   // the table items are bells, so their list icons are bell eyes too
   document.querySelectorAll('.obj b svg use').forEach(u => u.setAttribute('href', '#heart'));
 })();
