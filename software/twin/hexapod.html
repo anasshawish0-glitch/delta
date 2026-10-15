@@ -110,6 +110,10 @@ a.pill { text-decoration: none; text-align: center; }
 
     <section aria-labelledby="b-h">
       <h2 id="b-h">Body</h2>
+      <div class="seg" role="group" aria-label="Ground">
+        <button id="g-floor" aria-pressed="true">Hard floor</button>
+        <button id="g-rug" aria-pressed="false">Rug</button>
+      </div>
       <div class="joint"><span>Body height</span><output id="o-height"></output><input type="range" id="s-height" step="1" aria-label="Body height"></div>
       <div class="joint"><span>Leg spread</span><output id="o-spread"></output><input type="range" id="s-spread" step="1" aria-label="Leg spread"></div>
       <div class="joint"><span>Speed</span><output id="o-speed"></output><input type="range" id="s-speed" step="1" aria-label="Speed"></div>
@@ -156,7 +160,7 @@ a.pill { text-decoration: none; text-align: center; }
       </div>
     </details>
 
-    <p class="note">The front is the side between the two front legs. The sketch already has your channel map (board 1 = 0x40, board 2 = 0x41); for servos plugged straight into an Arduino Mega set USE_PCA9685 to 0 and fill in the pin list.</p>
+    <p class="note">The front is the side between legs 1 and 6. The sketch already has your channel map (board 1 = 0x40, board 2 = 0x41); for servos plugged straight into an Arduino Mega set USE_PCA9685 to 0 and fill in the pin list.</p>
     <p class="note">Servos need their own 5–6 V supply with a few amps on the PCA9685 V+ terminal, not the Arduino 5 V pin. Settings are saved in this browser.</p>
   </aside>
 
@@ -189,7 +193,7 @@ railPattern($('rail'), css('--pink'));
 const kitty = statusKitty($('kittyStatus'));
 
 // ---------- settings, kept in this browser ----------
-const KEY = 'kitty-hexapod-v3';
+const KEY = 'kitty-hexapod-v4';
 // the robot's own standing pose (wire order: leg 1 coxa, femur, tibia, leg 2 ...)
 const STAND_REF = [55, 105, 60, 60, 110, 95, 65, 110, 80, 60, 120, 155, 40, 95, 60, 40, 95, 60];
 const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
@@ -199,11 +203,12 @@ const cal = {
   stand: is18(saved.stand) ? saved.stand : [...STAND_REF],
   // the tibia servo sits on the other side of the leg from the femur servo, so it turns the other way
   invert: is18(saved.invert) ? saved.invert : Array.from({ length: 18 }, (_, i) => i % 3 === 2),
-  order: LEG_ORDERS[saved.order] ? saved.order : 'side-right',
+  // legs 1 and 6 sit side by side at the front: the numbers run round the body
+  order: LEG_ORDERS[saved.order] ? saved.order : 'around-right',
 };
 const first = calibrateFromStand(dims, cal.stand, cal.invert);
 cal.trim = is18(saved.trim) ? saved.trim : first.trim;
-const ui = { height: first.height, spread: first.spread, speed: 60, lift: 35, ...saved.ui };
+const ui = { height: first.height, spread: first.spread, speed: 60, lift: 30, ground: 'floor', ...saved.ui };
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ dims, ui, trim: cal.trim, invert: cal.invert, order: cal.order, stand: cal.stand })); } catch { /* private mode: settings last until reload */ } };
 
 // ---------- scene ----------
@@ -228,17 +233,20 @@ root.add(new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), floorMat));
 const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false }));
 root.add(shadow);
 
-// ---------- the robot: a look-alike of the black MG996R hexapod, with a pink bow ----------
+// ---------- the robot: a look-alike of the MG996R hexapod (yellow legs, violet dome), with a pink bow ----------
 function speckle() {
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
-  g.fillStyle = '#3b3b42'; g.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 4200; i++) { g.fillStyle = ['#8c8c98', '#b9b9c6', '#26262c', '#64646f'][i % 4]; g.fillRect(Math.random() * 256, Math.random() * 256, 1.4, 1.4); }
+  g.fillStyle = '#4a3f99'; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 4200; i++) { g.fillStyle = ['#8d82df', '#b6adf2', '#2f276f', '#6a5fc4'][i % 4]; g.fillRect(Math.random() * 256, Math.random() * 256, 1.4, 1.4); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-const black = new THREE.MeshStandardMaterial({ color: 0x2b2b31, roughness: 0.62 });
+// colours of the real robot (yellow legs, violet dome) toned to sit on the dark pink page
+const black = new THREE.MeshStandardMaterial({ color: 0x241d38, roughness: 0.62 });
+const yellow = new THREE.MeshStandardMaterial({ color: 0xf3cf4f, roughness: 0.55 });
+const violet = new THREE.MeshStandardMaterial({ color: 0x4d43a3, roughness: 0.5 });
 const servoM = new THREE.MeshStandardMaterial({ color: 0x18181c, roughness: 0.4, metalness: 0.2 });
 const hornM = new THREE.MeshStandardMaterial({ color: 0x0e0e10, roughness: 0.3, metalness: 0.6 });
-const sparkle = new THREE.MeshStandardMaterial({ map: speckle(), roughness: 0.45, metalness: 0.3 });
+const sparkle = new THREE.MeshStandardMaterial({ map: speckle(), roughness: 0.42, metalness: 0.25 });
 const pinkM = new THREE.MeshStandardMaterial({ color: css('--pink'), roughness: 0.4 });
 const box = (sx, sy, sz, mat, [x, y, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat); m.position.set(x, y, z); return m; };
 // disc whose axis runs along y (joint axes) or z (hip axes)
@@ -271,8 +279,8 @@ function build() {
   const sx = dims.layout === 'kalem' ? 1.114 : Math.max(1, 0.8 * Math.max(...mounts.map(m => Math.abs(m.x))) / (R * 0.866));
   const dome = new THREE.Group(); body.add(dome);
   if (dims.layout === 'hex-point') dome.rotation.z = Math.PI / 6;
-  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 59.5, 6), black); skirt.rotation.x = Math.PI / 2; skirt.scale.x = sx; skirt.position.z = 17.25; dome.add(skirt);
-  const top = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.83, R, 10.5, 6), [sparkle, sparkle, black]); top.rotation.x = Math.PI / 2; top.scale.x = sx; top.position.z = 52.25; dome.add(top);
+  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 59.5, 6), violet); skirt.rotation.x = Math.PI / 2; skirt.scale.x = sx; skirt.position.z = 17.25; dome.add(skirt);
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.83, R, 10.5, 6), [sparkle, sparkle, violet]); top.rotation.x = Math.PI / 2; top.scale.x = sx; top.position.z = 52.25; dome.add(top);
   body.add(disc(2.6, 70, black, [-R * sx * 0.7, 0, 85], 'z'));                     // radio antenna at the back
   const bow = new THREE.Group(); bow.position.set(R * sx * 0.45, 0, 59); body.add(bow);
   for (const s of [1, -1]) { const loop = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), pinkM); loop.scale.set(7, 12, 5); loop.position.set(0, s * 11, 0); loop.rotation.z = s * 0.35; bow.add(loop); }
@@ -288,20 +296,20 @@ function build() {
     mount.add(box(40.7, 19.7, 37, servoM, [-10, 0, 16.5]));                       // coxa servo, shaft up
     // coxa: U bracket round the hip servo, holding the femur servo upright
     const coxa = new THREE.Group(); mount.add(coxa);
-    coxa.add(box(C + 22, 30, 5, black, [(C - 2) / 2, 0, 37.5]), box(C + 22, 30, 5, black, [(C - 2) / 2, 0, -17.5]));
-    coxa.add(disc(10.5, 3, hornM, [0, 0, 41.5], 'z'), disc(11, 6, black, [0, 0, -23], 'z'));
-    coxa.add(box(5, 30, 60, black, [C + 12.5, 0, 10]), box(19.7, 37, 40.7, servoM, [C, 0, 10]));
+    coxa.add(box(C + 22, 30, 5, yellow, [(C - 2) / 2, 0, 37.5]), box(C + 22, 30, 5, yellow, [(C - 2) / 2, 0, -17.5]));
+    coxa.add(disc(10.5, 3, hornM, [0, 0, 41.5], 'z'), disc(11, 6, yellow, [0, 0, -23], 'z'));
+    coxa.add(box(5, 30, 60, yellow, [C + 12.5, 0, 10]), box(19.7, 37, 40.7, servoM, [C, 0, 10]));
     // femur: a fork round the femur servo and a box that holds the knee servo
     const femur = new THREE.Group(); femur.position.x = C; coxa.add(femur);
-    for (const y of [27.5, -27.5]) femur.add(box(0.6 * F + 12, 4, 24, black, [(0.6 * F - 12) / 2, y, 0]), disc(12, 4, black, [0, y, 0]));
+    for (const y of [27.5, -27.5]) femur.add(box(0.6 * F + 12, 4, 24, yellow, [(0.6 * F - 12) / 2, y, 0]), disc(12, 4, yellow, [0, y, 0]));
     femur.add(disc(10.5, 3, hornM, [0, -31, 0]));
-    const blen = 0.4 * F + 18; femur.add(box(blen, 58, 28.5, black, [0.6 * F + blen / 2, 0, 0]));
+    const blen = 0.4 * F + 18; femur.add(box(blen, 58, 28.5, yellow, [0.6 * F + blen / 2, 0, 0]));
     // tibia: bracket ears on the knee servo and the curved claw with a pink tip
     const tibia = new THREE.Group(); tibia.position.x = F; femur.add(tibia);
     const ear = EAR.map(([x, z]) => [x * k, z * k]);
-    tibia.add(plate(ear, 4, black, 27.5), plate(ear, 4, black, -27.5), disc(10.5, 3, hornM, [0, -31.5, 0]));
-    tibia.add(box(20 * k, 58, 33 * k, black, [52 * k, 0, 11.5 * k]), box(14 * k, 44, 22 * k, black, [67 * k, 0, 16.5 * k]));
-    tibia.add(plate(CLAW.map(([x, z]) => [x * k, z * k]), 18, black));
+    tibia.add(plate(ear, 4, yellow, 27.5), plate(ear, 4, yellow, -27.5), disc(10.5, 3, hornM, [0, -31.5, 0]));
+    tibia.add(box(20 * k, 58, 33 * k, yellow, [52 * k, 0, 11.5 * k]), box(14 * k, 44, 22 * k, yellow, [67 * k, 0, 16.5 * k]));
+    tibia.add(plate(CLAW.map(([x, z]) => [x * k, z * k]), 18, yellow));
     const tip = new THREE.Mesh(new THREE.SphereGeometry(4.5, 16, 12), pinkM); tip.position.set(T - 3 * k, 0, 0.5 * k); tibia.add(tip);
     const meshes = []; coxa.traverse(o => { if (o.isMesh) meshes.push([o, o.material]); });
     legs.push({ coxa, femur, tibia, meshes });
@@ -472,6 +480,13 @@ addEventListener('blur', () => keys.clear());
 
 const SLIDERS = { height: [50, 160, v => `${v} mm`], spread: [25, 75, v => `${Math.round(v / 100 * (dims.femur + dims.tibia))} mm`], speed: [20, 100, v => `${v}%`], lift: [15, 60, v => `${v} mm`] };
 const showSliders = () => { for (const [k, [, , f]] of Object.entries(SLIDERS)) $('o-' + k).textContent = f(ui[k]); };
+const period = () => (ui.ground === 'rug' ? 1.2 : 0.9);
+function setGround(g) {
+  ui.ground = g; ui.lift = g === 'rug' ? 50 : 30; ui.speed = Math.min(ui.speed, g === 'rug' ? 50 : 100);
+  $('g-floor').setAttribute('aria-pressed', g === 'floor'); $('g-rug').setAttribute('aria-pressed', g === 'rug');
+  $('s-lift').value = ui.lift; $('s-speed').value = ui.speed; showSliders(); save();
+}
+$('g-floor').onclick = () => setGround('floor'); $('g-rug').onclick = () => setGround('rug');
 for (const [k, [lo, hi]] of Object.entries(SLIDERS)) {
   const s = $('s-' + k); s.min = lo; s.max = hi; s.value = ui[k];
   s.addEventListener('input', () => {
@@ -549,7 +564,7 @@ function update(dt, now) {
   const want = phase !== 'stand' || trick || centerMode || rising ? STOP : drive();
   for (const k of ['vx', 'vy', 'wz']) cmd[k] += (want[k] - cmd[k]) * Math.min(1, dt * 6);
   if (want === STOP && Math.hypot(cmd.vx, cmd.vy) < 3 && Math.abs(cmd.wz) < 0.03) cmd.vx = cmd.vy = cmd.wz = 0;
-  gait.step(dt, cmd, home, { period: 0.9, lift: ui.lift });
+  gait.step(dt, cmd, home, { period: period(), lift: ui.lift });
   if (phase === 'up2' && !gait.active) phase = 'stand';
   if (phase === 'down1' && !gait.active) phase = 'down2';
   const { b, wave } = trickPose(dt, rising);
@@ -601,7 +616,8 @@ function frame(now) {
   update(dt, now); orbit.update(); renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
-build(); bodyH = sitH; showSliders(); showCal(); updateHeart(); resize(); $('loading').hidden = true; requestAnimationFrame(frame);
+build(); bodyH = sitH; showSliders(); showCal(); updateHeart(); resize();
+$('g-floor').setAttribute('aria-pressed', ui.ground === 'floor'); $('g-rug').setAttribute('aria-pressed', ui.ground === 'rug'); $('loading').hidden = true; requestAnimationFrame(frame);
 </script>
 </body>
 </html>

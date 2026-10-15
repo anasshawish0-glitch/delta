@@ -39,8 +39,9 @@ Calibration: the page starts from the robot's working standing pose (the angles 
 code). The median femur and tibia angles give the stance height and spread, and each servo's
 difference from them becomes its trim, so the page's stand pose sends exactly those angles.
 Defaults for this robot: Arduino UNO, PCA9685 boards at 0x40 and 0x41 with the channel map from
-CHANNELS.md, legs 1-3 on the right and 4-6 on the left, tibia servos turning opposite to the
-femurs.
+CHANNELS.md, legs numbered round the body (1-3 right side front to back, 4-6 left side back to
+front, so legs 1 and 6 are the front pair), tibia servos turning opposite to the femurs. A Rug
+setting raises the step to 50 mm and slows the cadence to 1.2 s per cycle.
 
 Rebuild arm assets: `python3 build_meshes.py <path to SO-ARM100/Simulation/SO101>`
 Preview locally: `python3 -m http.server` in this folder, then open http://localhost:8000
