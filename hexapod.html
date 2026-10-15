@@ -70,7 +70,7 @@ a.pill { text-decoration: none; text-align: center; }
   <aside class="rail" id="rail">
     <div class="brand">
       <svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
-      <div><h1>Kitty Hexapod</h1><p>18 servos · Arduino + PCA9685 · USB</p></div>
+      <div><h1>Kitty Hexapod</h1><p>18 × MG996R · Arduino · USB</p></div>
     </div>
     <nav class="tabs" aria-label="Robots"><a href="./">Arm</a><a href="hexapod.html" aria-current="page">Hexapod</a></nav>
 
@@ -107,20 +107,27 @@ a.pill { text-decoration: none; text-align: center; }
     <section aria-labelledby="b-h">
       <h2 id="b-h">Body</h2>
       <div class="joint"><span>Body height</span><output id="o-height"></output><input type="range" id="s-height" step="1" aria-label="Body height"></div>
+      <div class="joint"><span>Leg spread</span><output id="o-spread"></output><input type="range" id="s-spread" step="1" aria-label="Leg spread"></div>
       <div class="joint"><span>Speed</span><output id="o-speed"></output><input type="range" id="s-speed" step="1" aria-label="Speed"></div>
       <div class="joint"><span>Step height</span><output id="o-lift"></output><input type="range" id="s-lift" step="1" aria-label="Step height"></div>
     </section>
 
     <section aria-labelledby="d-h">
-      <h2 id="d-h">Leg sizes (mm, joint to joint)</h2>
+      <h2 id="d-h">Robot shape</h2>
+      <label class="field">Model<select id="layout"></select></label>
+      <p class="note" id="layoutNote"></p>
+      <h2>Leg sizes (mm, joint to joint)</h2>
       <div class="row3">
         <label class="field">Coxa<input id="d-coxa" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
         <label class="field">Femur<input id="d-femur" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
         <label class="field">Tibia<input id="d-tibia" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
       </div>
-      <div class="row2">
+      <div class="row2" id="rectDims">
         <label class="field">Front to back legs<input id="d-length" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
         <label class="field">Middle legs apart<input id="d-width" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
+      </div>
+      <div class="row2" id="hexDims">
+        <label class="field">Centre to hip axis<input id="d-radius" type="text" inputmode="decimal" autocomplete="off" dir="ltr"></label>
       </div>
     </section>
 
@@ -128,7 +135,7 @@ a.pill { text-decoration: none; text-align: center; }
       <summary>Servo calibration</summary>
       <div class="cal">
         <button class="pill" id="center">All servos to 90°</button>
-        <p class="note">Use this to fit the servo horns: coxa straight out, femur level, tibia straight down.</p>
+        <p class="note">Use this to fit the servo horns: coxa straight out from the body, femur level, claw tip straight below the knee.</p>
         <label class="field">Servo<select id="servo"></select></label>
         <div class="joint"><span>Trim</span><output id="o-trim"></output><input type="range" id="trim" min="-30" max="30" step="1" aria-label="Trim"></div>
         <label class="check"><input type="checkbox" id="invert"> Reverse direction</label>
@@ -140,7 +147,7 @@ a.pill { text-decoration: none; text-align: center; }
       </div>
     </details>
 
-    <p class="note">The Arduino sketch expects two PCA9685 boards: 0x40 for the right legs and 0x41 for the left. If yours are wired differently, edit the CHANNEL list at the top of the sketch.</p>
+    <p class="note">The front is the side between the two front legs (R1 and L1). The sketch works with two PCA9685 boards (0x40 right legs, 0x41 left legs) or with the servos plugged straight into an Arduino Mega: set USE_PCA9685 and the channel or pin list at the top.</p>
     <p class="note">Servos need their own 5–6 V supply with a few amps on the PCA9685 V+ terminal, not the Arduino 5 V pin. Settings are saved in this browser.</p>
   </aside>
 
@@ -164,8 +171,8 @@ setTimeout(() => { const l = document.getElementById('loading'); if (l && !l.hid
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { statusKitty, toNum, railPattern, kittyTile, kittyHead } from './kitty.js';
-import { LEGS, LEG_NAMES, JOINTS, DEFAULT_DIMS, legMounts, homeFeet, legIK, toBody, servoAngles, makeGait } from './hexapod.js';
+import { statusKitty, toNum, railPattern, kittyTile } from './kitty.js';
+import { JOINTS, LAYOUTS, KALEM, DEFAULT_DIMS, legNames, legMounts, homeFeet, legIK, toBody, servoAngles, sitSpread, makeGait } from './hexapod.js';
 
 const $ = id => document.getElementById(id);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -173,10 +180,10 @@ railPattern($('rail'), css('--pink'));
 const kitty = statusKitty($('kittyStatus'));
 
 // ---------- settings, kept in this browser ----------
-const KEY = 'kitty-hexapod-v1';
+const KEY = 'kitty-hexapod-v2';
 const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
 const dims = { ...DEFAULT_DIMS, ...saved.dims };
-const ui = { height: 90, speed: 60, lift: 30, ...saved.ui };
+const ui = { height: 110, spread: 38, speed: 60, lift: 35, ...saved.ui };
 const cal = {
   trim: Array.isArray(saved.trim) && saved.trim.length === 18 ? saved.trim : new Array(18).fill(0),
   invert: Array.isArray(saved.invert) && saved.invert.length === 18 ? saved.invert : new Array(18).fill(false),
@@ -189,60 +196,117 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(css('--viewport'));
-scene.fog = new THREE.Fog(css('--viewport'), 1.4, 4.5);
+scene.fog = new THREE.Fog(css('--viewport'), 1.8, 5.5);
 const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 20);
-camera.position.set(0.72, 0.42, 0.26);
+camera.position.set(0.98, 0.58, 0.36);
 const orbit = new OrbitControls(camera, canvas);
-orbit.target.set(0, 0.05, 0); orbit.enableDamping = true; orbit.maxPolarAngle = Math.PI * 0.48; orbit.minDistance = 0.25; orbit.maxDistance = 3;
-scene.add(new THREE.HemisphereLight(0xffffff, 0x4a2a3a, 1.5));
-const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(0.6, 1.2, 0.4); scene.add(sun);
-const fill = new THREE.DirectionalLight(0xffc2dc, 0.6); fill.position.set(-0.6, 0.4, -0.5); scene.add(fill);
+orbit.target.set(0, 0.07, 0); orbit.enableDamping = true; orbit.maxPolarAngle = Math.PI * 0.48; orbit.minDistance = 0.3; orbit.maxDistance = 3.5;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x3a2430, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(0.6, 1.2, 0.4); scene.add(sun);
+const rim = new THREE.DirectionalLight(0xff8fc0, 0.9); rim.position.set(-0.8, 0.5, -0.6); scene.add(rim);
 
 // robot world in millimetres with Z up
 const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; root.scale.setScalar(0.001); scene.add(root);
 const floorMat = new THREE.MeshStandardMaterial({ roughness: 0.95, map: kittyTile(THREE, css('--table'), css('--grid'), 40, 40) });
 root.add(new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), floorMat));
-const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false }));
 root.add(shadow);
 
-const white = new THREE.MeshStandardMaterial({ color: 0xf7f1f4, roughness: 0.55 });
-const dark = new THREE.MeshStandardMaterial({ color: 0x241f27, roughness: 0.5 });
-const pink = new THREE.MeshStandardMaterial({ color: css('--pink'), roughness: 0.45 });
+// ---------- the robot: a look-alike of the black MG996R hexapod, with a pink bow ----------
+function speckle() {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#3b3b42'; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 4200; i++) { g.fillStyle = ['#8c8c98', '#b9b9c6', '#26262c', '#64646f'][i % 4]; g.fillRect(Math.random() * 256, Math.random() * 256, 1.4, 1.4); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const black = new THREE.MeshStandardMaterial({ color: 0x2b2b31, roughness: 0.62 });
+const servoM = new THREE.MeshStandardMaterial({ color: 0x18181c, roughness: 0.4, metalness: 0.2 });
+const hornM = new THREE.MeshStandardMaterial({ color: 0x0e0e10, roughness: 0.3, metalness: 0.6 });
+const sparkle = new THREE.MeshStandardMaterial({ map: speckle(), roughness: 0.45, metalness: 0.3 });
+const pinkM = new THREE.MeshStandardMaterial({ color: css('--pink'), roughness: 0.4 });
 const box = (sx, sy, sz, mat, [x, y, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat); m.position.set(x, y, z); return m; };
+// disc whose axis runs along y (joint axes) or z (hip axes)
+const disc = (r, h, mat, [x, y, z], axis = 'y') => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 28), mat); if (axis === 'z') m.rotation.x = Math.PI / 2; m.position.set(x, y, z); return m; };
+// flat plate from an outline drawn in the leg plane (x along the link, z up), `t` thick across y
+function plate(points, t, mat, y = 0) {
+  const geo = new THREE.ExtrudeGeometry(new THREE.Shape(points.map(([x, z]) => new THREE.Vector2(x, z))), { depth: t, bevelEnabled: false });
+  geo.rotateX(Math.PI / 2); geo.translate(0, t / 2 + y, 0);
+  return new THREE.Mesh(geo, mat);
+}
+// claw outline measured from the print files (knee at 0,0, tip at 163,0, outward is +z)
+const CLAW = [[62, 26], [72, 28.5], [85, 28.5], [98, 27], [111, 23.5], [124, 19.5], [137, 14.5], [148, 10], [157, 6], [163, 0],
+  [160, -5], [150, -3], [137, -1], [124, 0.5], [111, 1.5], [98, 2.3], [85, 2.4], [72, 4], [62, 7]];
+const EAR = [[-12, -9], [0, -15], [12, -12], [35, -6], [62, -2], [62, 28], [40, 30], [15, 14], [0, 15], [-12, 9]];
 
 const body = new THREE.Group(); root.add(body);
 const legs = [];
-let mounts, home;
+let mounts, names, home, sitH, SIT_SPREAD, spreadNow;
 function build() {
-  mounts = legMounts(dims); home = homeFeet(dims, dims.femur * 0.95);
+  mounts = legMounts(dims); names = legNames(dims);
+  sitH = dims.layout === 'kalem' ? 26 : 30;
+  SIT_SPREAD = sitSpread(dims, sitH, ui.height, ui.spread);
+  if (spreadNow === undefined) spreadNow = SIT_SPREAD;
+  const nh = homeFeet(dims, spreadNow); if (home) gait.rebase(home, nh); home = nh;
   body.clear(); legs.length = 0;
-  const rx = dims.length / 2 + 28, ry = dims.width / 2 + 6;
-  const plate = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 48), white); plate.rotation.x = Math.PI / 2; plate.scale.set(rx, 12, ry); plate.position.z = 4; body.add(plate);
-  const belly = new THREE.Mesh(plate.geometry, dark); belly.rotation.x = Math.PI / 2; belly.scale.set(rx * 0.82, 14, ry * 0.82); belly.position.z = -9; body.add(belly);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.03, 8, 72), pink); rim.scale.set(rx, ry, 110); rim.position.z = 10; body.add(rim);
-  const head = kittyHead(THREE, 92, css('--pink')); head.position.set(12, 0, 10); body.add(head);
-  for (const m of mounts) {
+
+  // dome: a stretched hexagon with a sparkly chamfered top, flat side to the front
+  const dist = mounts.map(m => Math.hypot(m.x, m.y));
+  const R = dims.layout === 'kalem' ? 90 : 0.8 * Math.min(...dist);
+  const sx = dims.layout === 'kalem' ? 1.114 : Math.max(1, 0.8 * Math.max(...mounts.map(m => Math.abs(m.x))) / (R * 0.866));
+  const dome = new THREE.Group(); body.add(dome);
+  if (dims.layout === 'hex-point') dome.rotation.z = Math.PI / 6;
+  const skirt = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 59.5, 6), black); skirt.rotation.x = Math.PI / 2; skirt.scale.x = sx; skirt.position.z = 17.25; dome.add(skirt);
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.83, R, 10.5, 6), [sparkle, sparkle, black]); top.rotation.x = Math.PI / 2; top.scale.x = sx; top.position.z = 52.25; dome.add(top);
+  body.add(disc(2.6, 70, black, [-R * sx * 0.7, 0, 85], 'z'));                     // radio antenna at the back
+  const bow = new THREE.Group(); bow.position.set(R * sx * 0.45, 0, 59); body.add(bow);
+  for (const s of [1, -1]) { const loop = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), pinkM); loop.scale.set(7, 12, 5); loop.position.set(0, s * 11, 0); loop.rotation.z = s * 0.35; bow.add(loop); }
+  bow.add(new THREE.Mesh(new THREE.SphereGeometry(5.5, 20, 14), pinkM));
+
+  const C = dims.coxa, F = dims.femur, T = dims.tibia, k = T / 163;
+  mounts.forEach((m, i) => {
+    // servo arm of the body frame, pointing at this hip
+    const arm = new THREE.Group(); arm.rotation.z = Math.atan2(m.y, m.x); body.add(arm);
+    const r = dist[i], len = Math.max(10, r + 14 - 0.55 * R);
+    arm.add(box(len, 34, 37, black, [0.55 * R + len / 2, 0, 6]));
     const mount = new THREE.Group(); mount.position.set(m.x, m.y, 0); mount.rotation.z = m.a; body.add(mount);
-    mount.add(box(30, 22, 34, dark, [2, 0, -4]));                                   // coxa servo
+    mount.add(box(40.7, 19.7, 37, servoM, [-10, 0, 16.5]));                       // coxa servo, shaft up
+    // coxa: U bracket round the hip servo, holding the femur servo upright
     const coxa = new THREE.Group(); mount.add(coxa);
-    coxa.add(box(dims.coxa, 20, 8, white, [dims.coxa / 2, 0, 9]));
-    coxa.add(box(26, 34, 22, dark, [dims.coxa, 0, 0]));                             // femur servo
-    const femur = new THREE.Group(); femur.position.x = dims.coxa; coxa.add(femur);
-    femur.add(box(dims.femur, 18, 9, white, [dims.femur / 2, 0, 0]));
-    femur.add(box(24, 30, 20, dark, [dims.femur, 0, 0]));                           // tibia servo
-    const tibia = new THREE.Group(); tibia.position.x = dims.femur; femur.add(tibia);
-    const shin = new THREE.Mesh(new THREE.CylinderGeometry(4, 8, dims.tibia, 16), white); shin.rotation.z = -Math.PI / 2; shin.position.x = dims.tibia / 2; tibia.add(shin);
-    const foot = new THREE.Mesh(new THREE.SphereGeometry(7, 16, 12), pink); foot.position.x = dims.tibia; tibia.add(foot);
+    coxa.add(box(C + 22, 30, 5, black, [(C - 2) / 2, 0, 37.5]), box(C + 22, 30, 5, black, [(C - 2) / 2, 0, -17.5]));
+    coxa.add(disc(10.5, 3, hornM, [0, 0, 41.5], 'z'), disc(11, 6, black, [0, 0, -23], 'z'));
+    coxa.add(box(5, 30, 60, black, [C + 12.5, 0, 10]), box(19.7, 37, 40.7, servoM, [C, 0, 10]));
+    // femur: a fork round the femur servo and a box that holds the knee servo
+    const femur = new THREE.Group(); femur.position.x = C; coxa.add(femur);
+    for (const y of [27.5, -27.5]) femur.add(box(0.6 * F + 12, 4, 24, black, [(0.6 * F - 12) / 2, y, 0]), disc(12, 4, black, [0, y, 0]));
+    femur.add(disc(10.5, 3, hornM, [0, -31, 0]));
+    const blen = 0.4 * F + 18; femur.add(box(blen, 58, 28.5, black, [0.6 * F + blen / 2, 0, 0]));
+    // tibia: bracket ears on the knee servo and the curved claw with a pink tip
+    const tibia = new THREE.Group(); tibia.position.x = F; femur.add(tibia);
+    const ear = EAR.map(([x, z]) => [x * k, z * k]);
+    tibia.add(plate(ear, 4, black, 27.5), plate(ear, 4, black, -27.5), disc(10.5, 3, hornM, [0, -31.5, 0]));
+    tibia.add(box(20 * k, 58, 33 * k, black, [52 * k, 0, 11.5 * k]), box(14 * k, 44, 22 * k, black, [67 * k, 0, 16.5 * k]));
+    tibia.add(plate(CLAW.map(([x, z]) => [x * k, z * k]), 18, black));
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(4.5, 16, 12), pinkM); tip.position.set(T - 3 * k, 0, 0.5 * k); tibia.add(tip);
     legs.push({ coxa, femur, tibia });
-  }
+  });
+
+  // names in the calibration list and the servo table
+  const sel = $('servo'), keep = +sel.value || 0; sel.innerHTML = '';
+  names.names.forEach((n, leg) => JOINTS.forEach((j, q) => sel.add(new Option(`${names.codes[leg]} ${n} · ${j}`, leg * 3 + q))));
+  sel.value = keep; codeCells.forEach((c, leg) => { c.textContent = names.codes[leg]; c.title = names.names[leg]; });
+  $('rectDims').hidden = dims.layout !== 'rect'; $('hexDims').hidden = !dims.layout.startsWith('hex');
+  $('layoutNote').textContent = dims.layout === 'kalem'
+    ? 'Hexapod design by Emre Kalem. Sizes measured from your print files; change them only if your build differs.'
+    : 'Measure your robot joint to joint and type the sizes below.';
+  for (const key of ['coxa', 'femur', 'tibia', 'length', 'width', 'radius']) $('d-' + key).value = +dims[key].toFixed(1);
 }
-build();
 
 // ---------- motion state ----------
-const SIT_H = 30;
 const gait = makeGait();
 const cmd = { vx: 0, vy: 0, wz: 0 }, STOP = { vx: 0, vy: 0, wz: 0 };
-let standing = false, centerMode = false, bodyH = SIT_H, trick = null, test = null, angles = new Array(18).fill(90);
+// sit -> up1 (rise with the feet wide) -> up2 (step the feet in) -> stand -> down1 (step out) -> down2 (lower) -> sit
+let phase = 'sit', centerMode = false, bodyH = 0, trick = null, test = null, angles = new Array(18).fill(90);
+const standingPhase = () => phase === 'up1' || phase === 'up2' || phase === 'stand';
 const joy = { x: 0, y: 0 }, keys = new Set(); let turnHold = 0;
 
 function drive() {
@@ -255,11 +319,16 @@ function drive() {
   if (keys.has('KeyE') || keys.has('ArrowRight')) w -= 1;
   const l = Math.hypot(fx, fy); if (l > 1) { fx /= l; fy /= l; }
   w = Math.max(-1, Math.min(1, w));
-  const k = ui.speed / 100;
-  return { vx: 130 * k * fx, vy: 100 * k * fy, wz: 0.7 * k * w };
+  const s = ui.speed / 100;
+  return { vx: 140 * s * fx, vy: 110 * s * fy, wz: 0.6 * s * w };
 }
 
-// body pose for the tricks; the wave lifts the right front foot and shifts the body away from it
+function setSpread(s) {
+  if (s === spreadNow) return;
+  const nh = homeFeet(dims, s); gait.rebase(home, nh); home = nh; spreadNow = s;
+}
+
+// body pose for the tricks; the wave lifts leg 0 and shifts the body away from it
 function trickPose(dt, rising) {
   const b = { h: bodyH, sx: 0, sy: 0, roll: 0, pitch: 0, yaw: 0 };
   if (!trick) return { b, wave: null };
@@ -271,8 +340,9 @@ function trickPose(dt, rising) {
     b.roll = 0.12 * Math.sin(TAU * 0.8 * t) * env; b.pitch = 0.09 * Math.cos(TAU * 0.8 * t) * env;
     b.yaw = 0.15 * Math.sin(TAU * 0.4 * t) * env; b.h += 12 * Math.sin(TAU * 1.6 * t) * env; b.sx = 10 * Math.sin(TAU * 0.8 * t) * env;
   } else {
-    b.sx = -14 * env; b.sy = 16 * env;
-    wave = [home[0][0] + 30 * env, home[0][1] + (-5 + 28 * Math.sin(TAU * 1.3 * Math.max(0, t - 0.6))) * env, 75 * env];
+    const ca = Math.cos(mounts[0].a), sa = Math.sin(mounts[0].a), sw = 28 * Math.sin(TAU * 1.3 * Math.max(0, t - 0.6)) * env;
+    b.sx = -18 * ca * env; b.sy = -18 * sa * env;
+    wave = [home[0][0] + 30 * ca * env - sw * sa, home[0][1] + 30 * sa * env + sw * ca, 75 * env];
   }
   if (t >= trick.dur) { trick = null; kitty.cheer(); }
   return { b, wave };
@@ -301,7 +371,7 @@ async function connect() {
   const dec = new TextDecoderStream(); piped = port.readable.pipeTo(dec.writable).catch(() => {}); reader = dec.readable.getReader();
   setConn('wait', 'Waiting for the Arduino…');
   listen(reader);
-  // an Uno restarts when the port opens; ask again if it stays quiet
+  // an Arduino restarts when the port opens; ask again if it stays quiet
   hello = setTimeout(() => { if (port && !ready) writer.write(enc.encode('?\n')).catch(() => {}); hello = setTimeout(() => { if (port && !ready) setConn('err', 'No answer. Is hexapod_serial.ino uploaded?'); }, 2500); }, 2500);
 }
 async function listen(r) {
@@ -337,13 +407,17 @@ const wakeMotors = () => { if (relaxed) { relaxed = false; if (ready) setConn('o
 
 // ---------- controls ----------
 function updateHeart() {
-  $('standLabel').textContent = standing ? 'Sit' : 'Stand';
-  $('stand').setAttribute('aria-label', standing ? 'Sit down' : 'Stand up');
+  const up = standingPhase() && !centerMode;
+  $('standLabel').textContent = up ? 'Sit' : 'Stand';
+  $('stand').setAttribute('aria-label', up ? 'Sit down' : 'Stand up');
 }
-$('stand').onclick = () => { if (centerMode) { centerMode = false; standing = true; } else standing = !standing; trick = null; wakeMotors(); updateHeart(); };
-$('wave').onclick = () => { if (standing && !trick) { trick = { name: 'wave', t: 0, dur: 3.6, wait: true }; wakeMotors(); } };
-$('dance').onclick = () => { if (standing && !trick) { trick = { name: 'dance', t: 0, dur: 6.4, wait: true }; wakeMotors(); } };
-$('center').onclick = () => { centerMode = true; standing = false; trick = null; wakeMotors(); updateHeart(); };
+$('stand').onclick = () => {
+  if (centerMode) { centerMode = false; phase = 'stand'; } else phase = standingPhase() ? 'down1' : 'up1';
+  trick = null; wakeMotors(); updateHeart();
+};
+$('wave').onclick = () => { if (phase === 'stand' && !trick) { trick = { name: 'wave', t: 0, dur: 3.6, wait: true }; wakeMotors(); } };
+$('dance').onclick = () => { if (phase === 'stand' && !trick) { trick = { name: 'dance', t: 0, dur: 6.4, wait: true }; wakeMotors(); } };
+$('center').onclick = () => { centerMode = true; phase = 'sit'; trick = null; wakeMotors(); updateHeart(); };
 
 const joyEl = $('joy'), knob = $('knob');
 function moveJoy(e) {
@@ -371,42 +445,53 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
 
-const SLIDERS = { height: [50, 140, ' mm'], speed: [20, 100, '%'], lift: [15, 50, ' mm'] };
-for (const [k, [lo, hi, unit]] of Object.entries(SLIDERS)) {
-  const s = $('s-' + k), o = $('o-' + k);
-  s.min = lo; s.max = hi; s.value = ui[k]; o.textContent = ui[k] + unit;
-  s.addEventListener('input', () => { ui[k] = +s.value; o.textContent = ui[k] + unit; save(); });
+const SLIDERS = { height: [50, 160, v => `${v} mm`], spread: [25, 75, v => `${Math.round(v / 100 * (dims.femur + dims.tibia))} mm`], speed: [20, 100, v => `${v}%`], lift: [15, 60, v => `${v} mm`] };
+const showSliders = () => { for (const [k, [, , f]] of Object.entries(SLIDERS)) $('o-' + k).textContent = f(ui[k]); };
+for (const [k, [lo, hi]] of Object.entries(SLIDERS)) {
+  const s = $('s-' + k); s.min = lo; s.max = hi; s.value = ui[k];
+  s.addEventListener('input', () => {
+    ui[k] = +s.value; showSliders(); save();
+    if (k === 'height' || k === 'spread') { SIT_SPREAD = sitSpread(dims, sitH, ui.height, ui.spread); }
+  });
 }
-for (const k of ['coxa', 'femur', 'tibia', 'length', 'width']) {
-  const el = $('d-' + k); el.value = dims[k];
-  el.addEventListener('change', () => { const v = toNum(el.value); if (v >= 10 && v <= 400) { dims[k] = v; save(); build(); } el.value = dims[k]; });
+const layoutSel = $('layout');
+for (const [v, label] of Object.entries(LAYOUTS)) layoutSel.add(new Option(label, v));
+layoutSel.value = dims.layout;
+layoutSel.onchange = () => { dims.layout = layoutSel.value; if (dims.layout === 'kalem') Object.assign(dims, KALEM); save(); build(); showSliders(); };
+for (const k of ['coxa', 'femur', 'tibia', 'length', 'width', 'radius']) {
+  const el = $('d-' + k);
+  el.addEventListener('change', () => { const v = toNum(el.value); if (v >= 10 && v <= 400) { dims[k] = v; save(); build(); showSliders(); } el.value = +dims[k].toFixed(1); });
 }
 
 const sel = $('servo');
-LEGS.forEach((_, k) => JOINTS.forEach((j, n) => sel.add(new Option(`${LEG_NAMES[k]} · ${j}`, k * 3 + n))));
 const signed = v => `${v > 0 ? '+' : ''}${v}°`;
 const showCal = () => { const i = +sel.value; $('trim').value = cal.trim[i]; $('o-trim').textContent = signed(cal.trim[i]); $('invert').checked = cal.invert[i]; };
-sel.onchange = showCal; showCal();
+sel.onchange = showCal;
 $('trim').addEventListener('input', () => { const i = +sel.value; cal.trim[i] = +$('trim').value; $('o-trim').textContent = signed(cal.trim[i]); save(); });
 $('invert').onchange = () => { cal.invert[+sel.value] = $('invert').checked; save(); };
 $('test').onclick = () => { test = { i: +sel.value, t: 0 }; wakeMotors(); };
 
-const cells = [];
-LEGS.forEach((l, k) => {
-  const name = document.createElement('b'); name.textContent = l; name.title = LEG_NAMES[k]; $('grid').append(name);
+const cells = [], codeCells = [];
+for (let leg = 0; leg < 6; leg++) {
+  const name = document.createElement('b'); $('grid').append(name); codeCells.push(name);
   for (let j = 0; j < 3; j++) { const c = document.createElement('span'); $('grid').append(c); cells.push(c); }
-});
+}
 
 // ---------- every frame ----------
 let allOk = true;
 function update(dt, now) {
-  const targetH = centerMode ? dims.tibia : standing ? ui.height : SIT_H;
+  if (phase === 'up1' && Math.abs(bodyH - ui.height) < 0.5) phase = 'up2';
+  if (phase === 'down2' && Math.abs(bodyH - sitH) < 0.5) { phase = 'sit'; updateHeart(); }
+  if (!centerMode) setSpread(phase === 'up2' || phase === 'stand' ? ui.spread : SIT_SPREAD);
+  const targetH = centerMode ? dims.tibia : phase === 'up1' || phase === 'up2' || phase === 'stand' ? ui.height : phase === 'down1' ? bodyH : sitH;
   if (centerMode) bodyH = targetH; else bodyH += Math.sign(targetH - bodyH) * Math.min(Math.abs(targetH - bodyH), 70 * dt);
   const rising = Math.abs(targetH - bodyH) > 0.5;
-  const want = !standing || trick || centerMode || rising ? STOP : drive();
+  const want = phase !== 'stand' || trick || centerMode || rising ? STOP : drive();
   for (const k of ['vx', 'vy', 'wz']) cmd[k] += (want[k] - cmd[k]) * Math.min(1, dt * 6);
   if (want === STOP && Math.hypot(cmd.vx, cmd.vy) < 3 && Math.abs(cmd.wz) < 0.03) cmd.vx = cmd.vy = cmd.wz = 0;
   gait.step(dt, cmd, home, { period: 0.9, lift: ui.lift });
+  if (phase === 'up2' && !gait.active) phase = 'stand';
+  if (phase === 'down1' && !gait.active) phase = 'down2';
   const { b, wave } = trickPose(dt, rising);
   const feet = gait.feet(home); if (wave) feet[0] = wave;
 
@@ -423,18 +508,21 @@ function update(dt, now) {
   body.position.set(P.x + c * b.sx - s * b.sy, P.y + s * b.sx + c * b.sy, b.h);
   body.rotation.set(b.roll, b.pitch, P.yaw + b.yaw, 'ZYX');
   shadow.position.set(body.position.x, body.position.y, 0.5);
-  shadow.scale.setScalar((dims.length / 2 + 70) * (1 - Math.min(0.4, b.h / 400)));
+  shadow.scale.setScalar(0.55 * Math.hypot(home[1][0], home[1][1]) * (1 - Math.min(0.35, b.h / 500)));
   follow();
 
   angles = servoAngles(qs, cal);
+  if (angles.clipped) allOk = false;
   angles.forEach((a, i) => { const t = String(a); if (cells[i].textContent !== t) cells[i].textContent = t; });
   stream(now);
 
-  kitty.set(gait.active || trick || rising || test ? 'busy' : allOk ? 'idle' : 'sad');
-  const noTrick = !standing || !!trick;
+  const moving = gait.active || trick || rising || test || (phase !== 'sit' && phase !== 'stand');
+  kitty.set(moving ? 'busy' : allOk ? 'idle' : 'sad');
+  const msg = allOk ? 'All legs can reach' : "A leg can't reach or a servo is at its limit: change the height or leg spread";
+  const reach = $('reach'); if (reach.textContent !== msg) { reach.textContent = msg; reach.className = 'reach ' + (allOk ? 'ok' : 'no'); }
+  const noTrick = phase !== 'stand' || !!trick || centerMode;
   if ($('wave').disabled !== noTrick) $('wave').disabled = $('dance').disabled = noTrick;
-  const reach = $('reach'), msg = allOk ? 'All legs can reach' : "A leg can't reach: lower the body or the step height";
-  if (reach.textContent !== msg) { reach.textContent = msg; reach.className = 'reach ' + (allOk ? 'ok' : 'no'); }
+  if (phase === 'stand' && $('standLabel').textContent !== 'Sit' && !centerMode) updateHeart();
 }
 
 // the camera slides along with the robot
@@ -453,7 +541,7 @@ function frame(now) {
   update(dt, now); orbit.update(); renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
-updateHeart(); resize(); $('loading').hidden = true; requestAnimationFrame(frame);
+build(); bodyH = sitH; showSliders(); showCal(); updateHeart(); resize(); $('loading').hidden = true; requestAnimationFrame(frame);
 </script>
 </body>
 </html>
