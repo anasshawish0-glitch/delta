@@ -10,3 +10,7 @@ for now; a Python service on the Raspberry Pi will later stream real joint angle
 
 Rebuild assets: `python3 build_meshes.py <path to SO-ARM100/Simulation/SO101>`
 Preview locally: `python3 -m http.server` in this folder, then open http://localhost:8000
+
+Website: the `gh-pages` branch holds a copy of `index.html`, `kin.js`, `robot.json` and `meshes.json`,
+served by GitHub Pages at https://anasshawish0-glitch.github.io/delta/. After changing the page, copy
+those four files onto `gh-pages` and push.

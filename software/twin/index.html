@@ -1,4 +1,10 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SO-101 Kitty Twin</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 90%27%3E%3Cpath fill=%27%23ff5fa2%27 d=%27M50 86C20 64 2 46 2 26C2 12 13 2 27 2C37 2 45 8 50 16C55 8 63 2 73 2C87 2 98 12 98 26C98 46 80 64 50 86Z%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Nunito:wght@400;600;700&display=swap">
@@ -26,7 +32,7 @@
   color-scheme: dark;
 }
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; }
 .app { height: 100%; display: flex; flex-direction: row; }
 .view { position: relative; flex: 1; min-width: 0; background: var(--viewport); overflow: hidden; }
 #scene { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -98,7 +104,8 @@ section { display: grid; gap: 10px; background: color-mix(in srgb, var(--panel) 
 }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
-
+</head>
+<body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <symbol id="kitty" viewBox="0 0 120 100">
@@ -485,3 +492,5 @@ function frame() {
 }
 applyQ(solid, cur); paint(); setGhost(HOME, true); resize(); frame();
 </script>
+</body>
+</html>
