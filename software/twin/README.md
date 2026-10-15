@@ -29,6 +29,8 @@ Files:
 - `hexapod.js`: hexapod leg IK and tripod gait (also runs in Node)
 - `hexapod_serial/hexapod_serial.ino`: Arduino sketch; drives the servos through two PCA9685
   boards ("Adafruit PWM Servo Driver Library") or straight from Arduino Mega pins (`USE_PCA9685 0`)
+- `hexapod_check/hexapod_check.ino`: moves one servo at a time and prints which leg, joint,
+  board and channel it should be, to check the channel map on the real robot
 
 Hexapod serial protocol (115200 baud, one line each):
 `S` + 18 comma-separated angles in degrees in the robot's own leg order (Leg 1 coxa, femur,
