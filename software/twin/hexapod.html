@@ -4,10 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kitty Hexapod</title>
+<script>
+// pick the look before anything is drawn: ?theme=libra|kitty in the link, else the last choice
+(function () { var t = null; try { t = new URLSearchParams(location.search).get('theme'); if (t) localStorage.setItem('twin-theme', t); else t = localStorage.getItem('twin-theme'); } catch (e) {} if (t === 'libra') document.documentElement.dataset.theme = 'libra'; })();
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 90%27%3E%3Cpath fill=%27%23ff5fa2%27 d=%27M50 86C20 64 2 46 2 26C2 12 13 2 27 2C37 2 45 8 50 16C55 8 63 2 73 2C87 2 98 12 98 26C98 46 80 64 50 86Z%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Nunito:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Cinzel:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Nunito:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="kitty.css">
 <style>
 /* Hexapod page only: connection light, joystick, calibration panel and servo readout. */
@@ -74,9 +78,10 @@ a.pill { text-decoration: none; text-align: center; }
   <aside class="rail" id="rail">
     <div class="brand">
       <svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
-      <div><h1>Kitty Hexapod</h1><p>18 × MG996R · Arduino · USB</p></div>
+      <div><h1 data-libra="Libra Hexapod">Kitty Hexapod</h1><p>18 × MG996R · Arduino · USB</p></div>
     </div>
     <nav class="tabs" aria-label="Robots"><a href="./">Arm</a><a href="hexapod.html" aria-current="page">Hexapod</a></nav>
+    <div class="seg" role="group" aria-label="Look"><button data-theme-pick="kitty">Kitty</button><button data-theme-pick="libra">Libra</button></div>
 
     <section aria-labelledby="c-h">
       <h2 id="c-h">Robot connection</h2>
@@ -95,9 +100,9 @@ a.pill { text-decoration: none; text-align: center; }
         <button class="heart" id="stand" aria-label="Stand up"><svg><use href="#heart"/></svg><span id="standLabel">Stand</span></button>
         <button class="pill turn" id="turnR" aria-label="Turn right (hold)">↻</button>
       </div>
-      <div class="joy" id="joy" role="img" aria-label="Walk joystick: drag the heart, or use the W A S D keys"><div class="knob" id="knob"><svg><use href="#heart"/></svg></div></div>
+      <div class="joy" id="joy" role="img" aria-label="Walk joystick: drag the heart, or use the W A S D keys" data-libra-label="Walk joystick: drag the golden eye, or use the W A S D keys"><div class="knob" id="knob"><svg><use href="#heart"/></svg></div></div>
       <div class="reach ok" id="reach">All legs can reach</div>
-      <p class="note">Drag the heart to walk. Keyboard: W A S D walk, Q E or ← → turn.</p>
+      <p class="note" data-libra="Drag the golden eye to walk. Keyboard: W A S D walk, Q E or ← → turn.">Drag the heart to walk. Keyboard: W A S D walk, Q E or ← → turn.</p>
     </section>
 
     <section aria-labelledby="t-h">
@@ -153,7 +158,7 @@ a.pill { text-decoration: none; text-align: center; }
         <div class="joint"><span>Trim</span><output id="o-trim"></output><input type="range" id="trim" min="-90" max="90" step="1" aria-label="Trim"></div>
         <label class="check"><input type="checkbox" id="invert"> Reverse direction</label>
         <button class="pill" id="test">Wiggle this servo</button>
-        <p class="note">Wiggle turns the leg pink in the picture. The same leg on the robot should move the same way. Wrong leg: change Leg numbers. Wrong way: tick Reverse.</p>
+        <p class="note" data-libra="Wiggle turns the leg gold in the picture. The same leg on the robot should move the same way. Wrong leg: change Leg numbers. Wrong way: tick Reverse.">Wiggle turns the leg pink in the picture. The same leg on the robot should move the same way. Wrong leg: change Leg numbers. Wrong way: tick Reverse.</p>
         <button class="pill" id="flipCoxa">Walks backwards? Reverse all 6 coxa</button>
         <p class="note">Use this if the robot walks backwards, turns the wrong way or its legs push against each other. The stand pose stays the same.</p>
         <h2>Servo output (°)</h2>
@@ -184,10 +189,11 @@ a.pill { text-decoration: none; text-align: center; }
 <script>
 setTimeout(() => { const l = document.getElementById('loading'); if (l && !l.hidden) l.textContent = "Couldn't load the 3D view. Refresh the page."; }, 20000);
 </script>
+<script src="theme.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { statusKitty, toNum, railPattern, kittyTile } from './kitty.js';
+import { statusKitty, toNum, railPattern, kittyTile, ramHorns, theme } from './kitty.js';
 import { JOINTS, LAYOUTS, LEG_ORDERS, KALEM, DEFAULT_DIMS, legNames, legMounts, homeFeet, legIK, toBody, servoAngles, sitSpread, calibrateFromStand, makeGait } from './hexapod.js';
 
 const $ = id => document.getElementById(id);
@@ -227,7 +233,7 @@ const orbit = new OrbitControls(camera, canvas);
 orbit.target.set(0, 0.07, 0); orbit.enableDamping = true; orbit.maxPolarAngle = Math.PI * 0.48; orbit.minDistance = 0.3; orbit.maxDistance = 3.5;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x3a2430, 1.6));
 const sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(0.6, 1.2, 0.4); scene.add(sun);
-const rim = new THREE.DirectionalLight(0xff8fc0, 0.9); rim.position.set(-0.8, 0.5, -0.6); scene.add(rim);
+const rim = new THREE.DirectionalLight(theme === 'libra' ? 0xffc870 : 0xff8fc0, 0.9); rim.position.set(-0.8, 0.5, -0.6); scene.add(rim);
 
 // robot world in millimetres with Z up
 const root = new THREE.Group(); root.rotation.x = -Math.PI / 2; root.scale.setScalar(0.001); scene.add(root);
@@ -285,9 +291,12 @@ function build() {
   const skirt = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 59.5, 6), violet); skirt.rotation.x = Math.PI / 2; skirt.scale.x = sx; skirt.position.z = 17.25; dome.add(skirt);
   const top = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.83, R, 10.5, 6), [sparkle, sparkle, violet]); top.rotation.x = Math.PI / 2; top.scale.x = sx; top.position.z = 52.25; dome.add(top);
   body.add(disc(2.6, 70, black, [-R * sx * 0.7, 0, 85], 'z'));                     // radio antenna at the back
-  const bow = new THREE.Group(); bow.position.set(R * sx * 0.45, 0, 59); body.add(bow);
-  for (const s of [1, -1]) { const loop = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), pinkM); loop.scale.set(7, 12, 5); loop.position.set(0, s * 11, 0); loop.rotation.z = s * 0.35; bow.add(loop); }
-  bow.add(new THREE.Mesh(new THREE.SphereGeometry(5.5, 20, 14), pinkM));
+  if (theme === 'libra') body.add(ramHorns(THREE, [R * sx * 0.3, 0, 58], 1.5));   // ram horns with bell eyes
+  else {                                                                          // a pink bow
+    const bow = new THREE.Group(); bow.position.set(R * sx * 0.45, 0, 59); body.add(bow);
+    for (const s of [1, -1]) { const loop = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), pinkM); loop.scale.set(7, 12, 5); loop.position.set(0, s * 11, 0); loop.rotation.z = s * 0.35; bow.add(loop); }
+    bow.add(new THREE.Mesh(new THREE.SphereGeometry(5.5, 20, 14), pinkM));
+  }
 
   const C = dims.coxa, F = dims.femur, T = dims.tibia, k = T / 163;
   mounts.forEach((m, i) => {

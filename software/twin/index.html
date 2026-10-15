@@ -4,10 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SO-101 Kitty Twin</title>
+<script>
+// pick the look before anything is drawn: ?theme=libra|kitty in the link, else the last choice
+(function () { var t = null; try { t = new URLSearchParams(location.search).get('theme'); if (t) localStorage.setItem('twin-theme', t); else t = localStorage.getItem('twin-theme'); } catch (e) {} if (t === 'libra') document.documentElement.dataset.theme = 'libra'; })();
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 90%27%3E%3Cpath fill=%27%23ff5fa2%27 d=%27M50 86C20 64 2 46 2 26C2 12 13 2 27 2C37 2 45 8 50 16C55 8 63 2 73 2C87 2 98 12 98 26C98 46 80 64 50 86Z%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Nunito:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Cinzel:wght@600;800&family=IBM+Plex+Mono:wght@400;600&family=Nunito:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="kitty.css">
 <style>
 /* Arm page only: the kitty list and the two camera insets. */
@@ -52,9 +56,10 @@
   <aside class="rail" id="rail">
     <div class="brand">
       <svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>
-      <div><h1>Kitty Arm</h1><p>SO-101 digital twin · simulation, arm not connected</p></div>
+      <div><h1 data-libra="Libra Arm">Kitty Arm</h1><p>SO-101 digital twin · simulation, arm not connected</p></div>
     </div>
     <nav class="tabs" aria-label="Robots"><a href="./" aria-current="page">Arm</a><a href="hexapod.html">Hexapod</a></nav>
+    <div class="seg" role="group" aria-label="Look"><button data-theme-pick="kitty">Kitty</button><button data-theme-pick="libra">Libra</button></div>
 
     <section aria-labelledby="t-h">
       <h2 id="t-h">Gripper target (cm from base)</h2>
@@ -76,17 +81,17 @@
     </section>
 
     <section aria-labelledby="o-h">
-      <h2 id="o-h">Kitties on the table</h2>
+      <h2 id="o-h" data-libra="Bells on the table">Kitties on the table</h2>
       <div class="objs">
-        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg>Big kitty, pink bow</b><button class="pill" data-pick="big">Pick to tray</button></div>
-        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--bow-red)"><use href="#kitty"/></svg>Kitty, red bow</b><button class="pill" data-pick="red">Pick to tray</button></div>
-        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--pink-soft)"><use href="#kitty"/></svg>Mini kitty</b><button class="pill" data-pick="mini">Pick to tray</button></div>
+        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--pink)"><use href="#kitty"/></svg><span data-libra="Big gold bell">Big kitty, pink bow</span></b><button class="pill" data-pick="big">Pick to tray</button></div>
+        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--bow-red)"><use href="#kitty"/></svg><span data-libra="Ember bell">Kitty, red bow</span></b><button class="pill" data-pick="red">Pick to tray</button></div>
+        <div class="obj"><b><svg aria-hidden="true" style="--bow: var(--pink-soft)"><use href="#kitty"/></svg><span data-libra="Small pale bell">Mini kitty</span></b><button class="pill" data-pick="mini">Pick to tray</button></div>
       </div>
-      <button class="pill" id="reset">Put the kitties back</button>
+      <button class="pill" id="reset" data-libra="Put the bells back">Put the kitties back</button>
     </section>
 
     <section aria-labelledby="j-h">
-      <h2 id="j-h">Joints (pink ghost)</h2>
+      <h2 id="j-h" data-libra="Joints (golden ghost)">Joints (pink ghost)</h2>
       <div class="joint"><span>Base yaw</span><output id="o-shoulder_pan"></output><input type="range" id="s-shoulder_pan" step="0.01" aria-label="Base yaw"></div>
       <div class="joint"><span>Shoulder</span><output id="o-shoulder_lift"></output><input type="range" id="s-shoulder_lift" step="0.01" aria-label="Shoulder"></div>
       <div class="joint"><span>Elbow</span><output id="o-elbow_flex"></output><input type="range" id="s-elbow_flex" step="0.01" aria-label="Elbow"></div>
@@ -95,7 +100,7 @@
       <div class="joint"><span>Gripper</span><output id="o-gripper"></output><input type="range" id="s-gripper" step="0.01" aria-label="Gripper"></div>
     </section>
 
-    <p class="note">White arm: where the arm is now. Pink ghost: where it goes when you press the heart. An orange ghost means the target is out of reach.</p>
+    <p class="note" data-libra="White arm: where the arm is now. Golden ghost: where it goes when you press the eye. An orange ghost means the target is out of reach.">White arm: where the arm is now. Pink ghost: where it goes when you press the heart. An orange ghost means the target is out of reach.</p>
     <p class="note">When the kit arrives, a small Python service on the Raspberry Pi will connect this page to the motors and the real cameras.</p>
   </aside>
 
@@ -111,7 +116,7 @@
       <div class="inset" id="inset-top"><span>Table camera</span></div>
       <div class="inset" id="inset-wrist"><span>Wrist camera</span></div>
     </div>
-    <div class="hint">Drag the arrows on the pink heart to move the gripper. Click a kitty to target it.</div>
+    <div class="hint" data-libra="Drag the arrows on the golden eye to move the gripper. Click a bell to target it.">Drag the arrows on the pink heart to move the gripper. Click a kitty to target it.</div>
     <div class="status-kitty" id="kittyStatus"></div>
     <div class="loading" id="loading">Loading arm…</div>
   </div>
@@ -120,12 +125,13 @@
 <script>
 setTimeout(() => { const l = document.getElementById('loading'); if (l && !l.hidden) l.textContent = "Couldn't load the arm. Refresh the page."; }, 20000);
 </script>
+<script src="theme.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { makeRobot, ARM } from './kin.js';
-import { statusKitty, toNum, railPattern, kittyTile, kittyHead } from './kitty.js';
+import { statusKitty, toNum, railPattern, kittyTile, kittyHead, markerShape, theme } from './kitty.js';
 
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const desc = await (await fetch('robot.json')).json();
@@ -149,7 +155,7 @@ orbit.target.set(0.17, 0.1, 0.02);
 orbit.enableDamping = true;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x4a2a3a, 1.5));
 const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(0.6, 1.2, 0.4); scene.add(sun);
-const fill = new THREE.DirectionalLight(0xffc2dc, 0.6); fill.position.set(-0.6, 0.4, -0.5); scene.add(fill);
+const fill = new THREE.DirectionalLight(theme === 'libra' ? 0xffd9a0 : 0xffc2dc, 0.6); fill.position.set(-0.6, 0.4, -0.5); scene.add(fill);
 
 // robot frame: X forward, Y left, Z up (URDF). three.js is Y up, so turn the whole robot world.
 const world = new THREE.Group(); world.rotation.x = -Math.PI / 2; scene.add(world);
@@ -176,9 +182,9 @@ function makeKitty(key, w, bow, home) {
   g.userData = { key, home, grip: Math.max(0, (w - 0.018) / 0.08), graspZ: g.userData.h / 2 };
   world.add(g); objects[key] = g;
 }
-makeKitty('big', 0.04, 0xff5fa2, [0.24, 0.1, -0.35]);
-makeKitty('red', 0.032, 0xff3b5c, [0.2, -0.06, -0.6]);
-makeKitty('mini', 0.026, 0xffb3d1, [0.29, -0.02, -0.8]);
+makeKitty('big', 0.04, css('--pink'), [0.24, 0.1, -0.35]);
+makeKitty('red', 0.032, css('--bow-red'), [0.2, -0.06, -0.6]);
+makeKitty('mini', 0.026, css('--pink-soft'), [0.29, -0.02, -0.8]);
 function resetObjects() {
   for (const o of Object.values(objects)) { world.attach(o); const [x, y, rz] = o.userData.home; o.position.set(x, y, 0); o.rotation.set(0, 0, rz); }
 }
@@ -224,18 +230,10 @@ const cur = { ...HOME };            // where the arm is
 let goal = { ...HOME };             // where the ghost is
 let reachable = true;
 
-// target marker: a small pink heart; the gizmo moves it in robot coordinates
+// target marker: a small heart (a golden eye in the Libra look); the gizmo moves it in robot coordinates
 const marker = new THREE.Object3D(); world.add(marker);
 const markerMat = new THREE.MeshStandardMaterial({ roughness: 0.4, emissiveIntensity: 0.35 });
-{
-  const s = new THREE.Shape();
-  s.moveTo(0, -0.43); s.bezierCurveTo(-0.3, -0.21, -0.48, -0.03, -0.48, 0.17); s.bezierCurveTo(-0.48, 0.31, -0.37, 0.41, -0.23, 0.41);
-  s.bezierCurveTo(-0.13, 0.41, -0.05, 0.35, 0, 0.27); s.bezierCurveTo(0.05, 0.35, 0.13, 0.41, 0.23, 0.41);
-  s.bezierCurveTo(0.37, 0.41, 0.48, 0.31, 0.48, 0.17); s.bezierCurveTo(0.48, -0.03, 0.3, -0.21, 0, -0.43);
-  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.3, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 3 });
-  geo.translate(0, 0, -0.15); geo.scale(0.022, 0.022, 0.022);
-  const hm = new THREE.Mesh(geo, markerMat); hm.rotation.set(Math.PI / 2, 0, Math.PI / 2, 'ZYX'); marker.add(hm);
-}
+marker.add(markerShape(THREE, markerMat));
 const gizmo = new TransformControls(camera, canvas);
 gizmo.setSpace('local'); gizmo.setSize(0.7); gizmo.attach(marker); scene.add(gizmo);
 gizmo.addEventListener('dragging-changed', e => { orbit.enabled = !e.value; });

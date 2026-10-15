@@ -23,7 +23,11 @@ With long claws the femur would pass 180° if the body simply dropped, so sittin
 out first and then lowers the body; standing up rises first and then steps the feet back in.
 
 Files:
-- `kitty.css`, `kitty.js`: shared theme, the animated corner kitty, kitty patterns and 3D heads
+- `kitty.css`, `kitty.js`: shared theme, the animated corner mascot, patterns and 3D table items
+- `theme.js`: the look switch. "Kitty" is the pink Hello-Kitty style; "Libra" is black, bone and
+  gold with an original ram-horned night goat (bell eyes, a mask, gold flecks) that gets furious
+  instead of sad, golden bell items, a bell-eye Run button and ram horns on the hexapod. Pick it
+  with the Kitty / Libra buttons or `?theme=libra`; the choice is remembered in the browser
 - `kin.js`: arm forward kinematics + damped least-squares IK (also runs in Node)
 - `robot.json`, `meshes.json`: arm model built from the official URDF by `build_meshes.py`
 - `hexapod.js`: hexapod leg IK and tripod gait (also runs in Node)

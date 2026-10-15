@@ -161,3 +161,48 @@ section { display: grid; gap: 10px; background: color-mix(in srgb, var(--panel) 
   .rail { width: auto; border-inline-end: 0; border-top: 1px solid var(--line); }
   .deco.k3, .deco.h2 { display: none; }
 }
+
+/* ---------- Libra look: black fur, bone and gold, ram horns and bell eyes ---------- */
+:root[data-theme="libra"] {
+  --bg: #0b0a08;
+  --panel: #15120e;
+  --ink: #f1e8d6;
+  --muted: #b6a789;
+  --line: #3a3124;
+  --pink: #f2b929;
+  --pink-soft: #e6cf96;
+  --bow-red: #d0542a;
+  --ok: #a3d977;
+  --warn: #ff6b3d;
+  --viewport: #0c0b09;
+  --table: #16130f;
+  --grid: #3a3022;
+  --paper: #ece2cf;
+  --kitty-line: #120f0b;
+  --head: "Cinzel", "Nunito", Georgia, serif;
+}
+:root[data-theme="libra"] .brand h1 { letter-spacing: .02em; }
+:root[data-theme="libra"] .heart span { padding-bottom: 0; color: var(--pink); font-size: 1rem; letter-spacing: .08em; text-transform: uppercase; }
+:root[data-theme="libra"] .tabs a[aria-current="page"], :root[data-theme="libra"] .seg button[aria-pressed="true"], :root[data-theme="libra"] .pill.solid { color: #1a1206; }
+/* the goat's moods: calm, watching, furious when the robot can't reach, pleased, asleep */
+:root[data-theme="libra"] .status-kitty .sk-blush { fill: #f2b929; }
+:root[data-theme="libra"] .status-kitty .lb-eye { transform-box: fill-box; transform-origin: center; animation: sk-blink 5.6s infinite; }
+:root[data-theme="libra"] .status-kitty .lb-eye:nth-of-type(2) { animation-delay: -1.3s; }
+:root[data-theme="libra"] .status-kitty .lb-eye:nth-of-type(3) { animation-delay: -2.9s; }
+:root[data-theme="libra"] .status-kitty .lb-eye:nth-of-type(4) { animation-delay: -4.1s; }
+:root[data-theme="libra"] .status-kitty.sad .sk-body { animation: lb-shake .14s linear infinite; }
+:root[data-theme="libra"] .status-kitty.sad .sk-head { transform: rotate(-6deg) translateY(5px); }
+:root[data-theme="libra"] .status-kitty.sad .lb-eye { fill: #ff5a36; animation: none; }
+:root[data-theme="libra"] .status-kitty.sad .sk-tear { opacity: 1; animation: lb-throb .45s ease-in-out infinite alternate; }
+:root[data-theme="libra"] .status-kitty.sad .sk-open { transform: none; }
+:root[data-theme="libra"] .status-kitty.sad .lb-slit { stroke: #ff5a36; }
+@keyframes lb-shake { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-1.5px, .5px); } 50% { transform: translate(1px, -.5px); } 75% { transform: translate(1.5px, .5px); } }
+@keyframes lb-throb { from { transform: scale(.85); } to { transform: scale(1.15); } }
+:root[data-theme="libra"] .status-kitty .sk-tear { transform-origin: center; }
+:root[data-theme="libra"] .status-kitty .lb-bell { transform-box: fill-box; transform-origin: 50% 0%; animation: lb-swing 2.8s ease-in-out infinite alternate; }
+:root[data-theme="libra"] .status-kitty .lb-bell-r { animation-delay: -1.4s; }
+:root[data-theme="libra"] .status-kitty.busy .lb-bell { animation: lb-jingle .18s ease-in-out infinite alternate; }
+:root[data-theme="libra"] .status-kitty.happy .lb-bell { animation: lb-jingle .14s ease-in-out 8 alternate; }
+:root[data-theme="libra"] .status-kitty.sad .lb-bell, :root[data-theme="libra"] .status-kitty.sleep .lb-bell { animation: none; }
+@keyframes lb-swing { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@keyframes lb-jingle { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
