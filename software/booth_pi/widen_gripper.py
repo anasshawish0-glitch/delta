@@ -3,6 +3,7 @@
 #   python widen_gripper.py <recording> <new name> --grip 4 [1.5]  wider only when it lets go of the 4th block
 #   python widen_gripper.py <recording> <new name> --approach 3 0.6  narrower while it comes down onto the 3rd block
 #   python widen_gripper.py <recording> <new name> --hold 4 [1.5]  stop still and open fully before leaving the 4th block
+#   python widen_gripper.py <recording> <new name> --hold 4 --plus 2  ... and open only 2 units more than recorded
 #   python widen_gripper.py <recording> <new name> [1.5]           wider everywhere
 import sys, json, shutil, pathlib, argparse
 import numpy as np, pyarrow as pa, pyarrow.parquet as pq
@@ -13,6 +14,7 @@ ap.add_argument("--grip", type=int, help="widen only the opening right after thi
 ap.add_argument("--approach", type=int, help="change only the opening while it comes down onto this block (1 = first)")
 ap.add_argument("--hold", type=int, help="when it lets go of this block, keep the arm still while the gripper opens (1 = first)")
 ap.add_argument("--wait", type=float, default=1.0, help="--hold: seconds the arm stays still (1)")
+ap.add_argument("--plus", type=float, help="--hold: open this many units (about degrees) more than recorded, instead of the factor")
 ap.add_argument("--list", action="store_true", help="only list the grasps")
 ap.add_argument("--secs", type=float, default=None, help="--grip/--hold: seconds wider after letting go (1); --approach: seconds before it closes (1.5)")
 o = ap.parse_intermixed_args()
@@ -104,7 +106,7 @@ for p in sorted((dst / "data").glob("*/*.parquet")):
         a, b = window(s, amp, *runs[o.hold])           # a: the moment it starts to let go
         peak = s[a:b].max()
         p_open = a + int(np.argmax(s[a:b] >= 0.95 * peak))
-        T = peak * max(o.factor, 1.0)
+        T = peak + max(o.plus, 0.0) if o.plus is not None else peak * max(o.factor, 1.0)
         # after the stop: fully open from the start, stay open o.secs past the moment it was open
         # in the recording, then back to the recorded opening over 0.5 s; back at least 1.5 s before
         # it starts closing on the next block, so that block is picked up exactly as recorded
