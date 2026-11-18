@@ -9,6 +9,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("src"); ap.add_argument("dst", nargs="?"); ap.add_argument("factor", nargs="?", type=float, default=1.5)
 ap.add_argument("--grip", type=int, help="widen only the opening right after this grasp (1 = first block)")
 ap.add_argument("--list", action="store_true", help="only list the grasps")
+ap.add_argument("--secs", type=float, default=1.0, help="with --grip: how long it stays wider after it starts letting go")
 o = ap.parse_intermixed_args()
 
 L = pathlib.Path.home() / ".cache/huggingface/lerobot/local"
@@ -65,7 +66,13 @@ for p in sorted((dst / "data").glob("*/*.parquet")):
     if o.grip:
         if o.grip >= len(runs): sys.exit(f"there are only {len(runs) - 1} grasps in {o.src}")
         a, b = window(s, amp, *runs[o.grip])
-        s2 = s.copy(); s2[a:b] *= o.factor
+        # wider only while it lets go: o.secs at full width, then back to the recorded opening over 0.5 s,
+        # so it reaches the next block exactly as recorded
+        n = np.arange(b - a) / fps
+        w = np.clip(1 - (n - o.secs) / 0.5, 0, 1)
+        w = w * w * (3 - 2 * w)
+        s2 = s.copy(); s2[a:b] *= 1 + (o.factor - 1) * w
+        b = a + int((o.secs + 0.5) * fps) if a + int((o.secs + 0.5) * fps) < b else b
         print(f"grasp {o.grip}: the release at {a / fps:.1f}s -> {b / fps:.1f}s opens to "
               f"{closed + sign * s2[a:b].max():.1f} instead of {closed + sign * s[a:b].max():.1f}")
     else:
