@@ -124,9 +124,12 @@ for p in sorted((dst / "data").glob("*/*.parquet")):
             j = t.schema.get_field_index(name)
             if j >= 0: t = t.set_column(j, t.schema.field(j), pa.array(val, type=t.schema.field(j).type))
         added += H
+        to = float(np.clip(closed + sign * T, 0, 100))
         print(f"block {o.hold}: at {a / fps:.1f}s the arm now stops for {H / fps:.1f}s while the gripper opens to "
-              f"{closed + sign * T:.1f} (recorded {closed + sign * peak:.1f}); back to the recording "
+              f"{to:.1f} (recorded {closed + sign * peak:.1f}); back to the recording "
               f"{max(0, (c - fe) / fps):.1f}s before it closes on block {o.hold + 1}")
+        if to in (0.0, 100.0):
+            print(f"  note: {to:.0f} is as far as the gripper's calibration lets it open")
     else:
         s2 = s * o.factor
         print(f"every opening x{o.factor}")
