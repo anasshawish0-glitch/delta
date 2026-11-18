@@ -1,6 +1,7 @@
 # Copy a recording with the gripper opening wider; how tightly it grips stays the same.
 #   python widen_gripper.py <recording> --list                    list the grasps and how wide each release opens
 #   python widen_gripper.py <recording> <new name> --grip 4 [1.5]  wider only when it lets go of the 4th block
+#   python widen_gripper.py <recording> <new name> --approach 3 0.6  narrower while it comes down onto the 3rd block
 #   python widen_gripper.py <recording> <new name> [1.5]           wider everywhere
 import sys, json, shutil, pathlib, argparse
 import numpy as np, pyarrow as pa, pyarrow.parquet as pq
@@ -8,9 +9,11 @@ import numpy as np, pyarrow as pa, pyarrow.parquet as pq
 ap = argparse.ArgumentParser()
 ap.add_argument("src"); ap.add_argument("dst", nargs="?"); ap.add_argument("factor", nargs="?", type=float, default=1.5)
 ap.add_argument("--grip", type=int, help="widen only the opening right after this grasp (1 = first block)")
+ap.add_argument("--approach", type=int, help="change only the opening while it comes down onto this block (1 = first)")
 ap.add_argument("--list", action="store_true", help="only list the grasps")
-ap.add_argument("--secs", type=float, default=1.0, help="with --grip: how long it stays wider after it starts letting go")
+ap.add_argument("--secs", type=float, default=None, help="--grip: seconds wider after letting go (1); --approach: seconds before it closes (1.5)")
 o = ap.parse_intermixed_args()
+if o.secs is None: o.secs = 1.5 if o.approach else 1.0
 
 L = pathlib.Path.home() / ".cache/huggingface/lerobot/local"
 src = L / o.src
@@ -63,7 +66,18 @@ for p in sorted((dst / "data").glob("*/*.parquet")):
     act = np.array(col.to_pylist(), dtype=np.float32)
     v = act[:, g].copy()
     closed, sign, s, amp, runs = analyse(v)
-    if o.grip:
+    if o.approach:
+        if not 1 <= o.approach < len(runs): sys.exit(f"there are only {len(runs) - 1} grasps in {o.src}")
+        a0, b = runs[o.approach - 1]
+        while b < len(s) and s[b] > 0.05 * amp: b += 1          # through the closing onto the handle
+        full = max(a0, runs[o.approach - 1][1] - int(o.secs * fps))
+        a = max(a0, full - int(0.5 * fps))
+        w = np.ones(b - a); ramp = full - a
+        if ramp > 0: x = np.arange(ramp) / ramp; w[:ramp] = x * x * (3 - 2 * x)
+        s2 = s.copy(); s2[a:b] *= 1 + (o.factor - 1) * w
+        print(f"block {o.approach}: coming down at {a / fps:.1f}s -> {b / fps:.1f}s opens to "
+              f"{closed + sign * s2[full:b].max():.1f} instead of {closed + sign * s[full:b].max():.1f}")
+    elif o.grip:
         if o.grip >= len(runs): sys.exit(f"there are only {len(runs) - 1} grasps in {o.src}")
         a, b = window(s, amp, *runs[o.grip])
         # wider only while it lets go: o.secs at full width, then back to the recorded opening over 0.5 s,
