@@ -6,7 +6,7 @@
 # recorded. If a block is missing from the gripper, the arm gets stuck, or the connection drops, it stops at
 # once, lets go, folds the arm, beeps, waits one minute so someone can put ALL the blocks back in storage,
 # and starts again from the build. Ctrl+C folds the arm and quits. A log goes to booth_log.txt.
-import argparse, json, sys, time
+import argparse, glob, json, os, sys, time
 from pathlib import Path
 import numpy as np, pyarrow.parquet as pq
 
@@ -22,6 +22,15 @@ BLOCK_TOL = 25.0       # degrees away from the recording = the arm is stuck
 WINDOW = 0.3           # s of timing slack when comparing with the recording
 MISS_TIME, BLOCK_TIME = 0.3, 1.0   # how long a difference must last
 HOME_SPEED = 15.0      # deg/s when folding after a problem
+HEADLESS_WAIT = 300    # s instead of "press Enter" when nobody can type (Raspberry Pi service)
+
+def find_port(port):
+    """auto: COM11 on Windows; on Linux the first USB serial device that is not an Arduino"""
+    if port != "auto": return port
+    if os.name == "nt": return "COM11"
+    ids = [p for p in sorted(glob.glob("/dev/serial/by-id/*")) if "arduino" not in p.lower()]
+    devs = ids or sorted(glob.glob("/dev/ttyACM*")) + sorted(glob.glob("/dev/ttyUSB*"))
+    return devs[0] if devs else None
 
 def log(msg):
     line = f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {msg}"
@@ -80,12 +89,14 @@ class Arm:
         self.port, self.robot_id, self.robot = port, robot_id, None
     def connect(self):
         while True:
+            port = find_port(self.port)
             try:
+                if port is None: raise ConnectionError("no USB serial device")
                 from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
-                self.robot = SO101Follower(SO101FollowerConfig(port=self.port, id=self.robot_id, max_relative_target=10))
-                self.robot.connect(); log(f"arm connected on {self.port}"); return
+                self.robot = SO101Follower(SO101FollowerConfig(port=port, id=self.robot_id, max_relative_target=10))
+                self.robot.connect(); log(f"arm connected on {port}"); return
             except Exception as e:
-                log(f"waiting for the arm on {self.port} ({type(e).__name__})"); self.robot = None; time.sleep(5)
+                log(f"waiting for the arm on {port or self.port} ({type(e).__name__})"); self.robot = None; time.sleep(5)
     def read(self, names):
         o = self.robot.get_observation(); return np.array([float(o[n]) for n in names])
     def send(self, names, values): self.robot.send_action({n: float(v) for n, v in zip(names, values)})
@@ -150,7 +161,7 @@ def wait(sec, msg):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--build", required=True); ap.add_argument("--unbuild", required=True)
-    ap.add_argument("--port", default="COM11"); ap.add_argument("--id", default="white_arm")
+    ap.add_argument("--port", default="auto", help="auto, COM11, /dev/ttyACM0, ..."); ap.add_argument("--id", default="white_arm")
     ap.add_argument("--wait", type=int, default=PROBLEM_WAIT, help="seconds to put the blocks back after a problem")
     a = ap.parse_args()
     build, unbuild = Recording(a.build), Recording(a.unbuild)
@@ -168,8 +179,12 @@ def main():
                 fails += 1; log(f"PROBLEM: {e}")
                 fold(arm, build, unbuild); beep(2)
                 if fails >= MAX_FAILS:
-                    log(f"{fails} problems in a row: put the blocks back and press Enter to start again")
-                    input(); fails = 0
+                    if sys.stdin is not None and sys.stdin.isatty():
+                        log(f"{fails} problems in a row: put the blocks back and press Enter to start again")
+                        input()
+                    else:
+                        wait(HEADLESS_WAIT, f"{fails} problems in a row: waiting {HEADLESS_WAIT // 60} minutes. Put ALL blocks back in storage.")
+                    fails = 0
                 else:
                     wait(a.wait, "Put ALL blocks back in storage and leave the arm alone.")
             except (ConnectionError, OSError, RuntimeError) as e:
