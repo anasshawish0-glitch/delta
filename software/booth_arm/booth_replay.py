@@ -93,7 +93,7 @@ class Arm:
             try:
                 if port is None: raise ConnectionError("no USB serial device")
                 from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
-                self.robot = SO101Follower(SO101FollowerConfig(port=port, id=self.robot_id, max_relative_target=10))
+                self.robot = SO101Follower(SO101FollowerConfig(port=port, id=self.robot_id, max_relative_target=10.0))
                 self.robot.connect(); log(f"arm connected on {port}"); return
             except Exception as e:
                 log(f"waiting for the arm on {port or self.port} ({type(e).__name__})"); self.robot = None; time.sleep(5)
