@@ -19,3 +19,11 @@ Between places the arm goes straight up to the travel height, turns, and comes d
 through the stacks. Taking the house apart is the taught list backwards. The program checks the gripper position: if a grab
 closes on nothing or a block falls on the way, the arm folds, beeps and waits for Enter.
 Speeds, pauses and gripper margins are at the top of the file.
+
+## Recordings instead: `booth_replay.py`
+
+`python booth_replay.py --build <name> --unbuild <name>` plays two LeRobot recordings in a loop (build,
+30 s, take apart, 90 s) and compares the arm with what it did while recording. If the gripper closes past
+where it held a block, an arm joint stays 25 degrees away from the recording, or the connection drops, it
+lets go, folds the arm, beeps, waits a minute for someone to put all blocks back in storage, and starts again
+from the build. After five problems in a row it waits for Enter. Every event goes to `booth_log.txt`.
